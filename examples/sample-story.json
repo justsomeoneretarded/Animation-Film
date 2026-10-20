@@ -1,114 +1,141 @@
 {
-  "title": "One Small Step",
-  "brief": "A bald young woman spends her evenings scrolling alone in her bedroom. She puts her phone down and writes one tiny goal at her desk. The next morning she walks outside. She almost turns back, but sits quietly in the park. End on the rooftop with her choosing to try again tomorrow. Reflective, quiet, hopeful. Female lead. One visible protagonist throughout.",
-  "character": "female",
+  "title": "Depressed",
+  "brief": "Use the authored depression story. Male lead.",
+  "character": "male",
   "scenes": [
     {
       "location": "bedroom",
       "action": "phone",
-      "emotion": "sad",
-      "narration": "The woman pauses, her fingers hovering over the screen. She hesitates for a moment before continuing to scroll.",
-      "shadow": true
+      "emotion": "tired",
+      "narration": "At two seventeen, he was still awake. His thumb kept moving, although nothing on the screen interested him anymore. He had been waiting to feel tired enough to sleep. Somehow, he was exhausted and wide awake at the same time.",
+      "shadow": false,
+      "time": "night",
+      "shot": "wide",
+      "event": "Awake at 2:17, scrolling without interest.",
+      "prop_text": ""
     },
     {
       "location": "bedroom",
-      "action": "phone",
+      "action": "sit",
       "emotion": "sad",
-      "narration": "She taps through apps, her fingers moving in rhythm. Each scroll reveals another page of images and text, each one more private than the last.",
-      "shadow": true
+      "narration": "The room was not a disaster. That almost made it harder to explain. There were things he could do, small ordinary things. Answer a message. Wash a cup. Each one seemed to require something he could no longer find.",
+      "shadow": false,
+      "time": "night",
+      "shot": "close",
+      "event": "The phone lowers. He cannot make himself begin the day.",
+      "prop_text": ""
     },
     {
       "location": "desk",
       "action": "write",
-      "emotion": "determined",
-      "narration": "She puts her phone down, the screen dimming as she focuses on her desk. The pen moves slowly across the paper, each stroke a small step towards clarity.",
-      "shadow": true
+      "emotion": "tired",
+      "narration": "At his desk, he tried the thing that usually helped: a list. He wrote the first line, then held the pen above the second. The page stayed mostly empty. He stared at it until it began to feel like evidence against him.",
+      "shadow": false,
+      "time": "night",
+      "shot": "wide",
+      "event": "He attempts a long to-do list, but stops writing.",
+      "prop_text": "Things I should do"
+    },
+    {
+      "location": "desk",
+      "action": "idle",
+      "emotion": "sad",
+      "narration": "He had called himself lazy so often that the word arrived before any other thought. But he missed wanting things. He missed laughing without having to prepare for it. This was not a life he had chosen because it was easy.",
+      "shadow": false,
+      "time": "night",
+      "shot": "close",
+      "event": "He pauses at the desk and admits he is struggling.",
+      "prop_text": ""
     },
     {
       "location": "desk",
       "action": "write",
-      "emotion": "determined",
-      "narration": "She pauses, her fingers tracing the words on the screen as she puts her phone down. The room is quiet except for the gentle hum of the air conditioning.",
-      "shadow": false
+      "emotion": "worried",
+      "narration": "When the window began to lighten, he turned to a clean page. This time, he wrote only two words: go outside. Underneath, he added a condition. He was allowed to come straight back. The promise felt small enough to believe.",
+      "shadow": false,
+      "time": "dawn",
+      "shot": "wide",
+      "event": "He writes a smaller goal: go outside, with permission to come back.",
+      "prop_text": "GO OUTSIDE|I can come back."
+    },
+    {
+      "location": "street",
+      "action": "idle",
+      "emotion": "worried",
+      "narration": "Outside, he stopped almost immediately. The air was colder than he expected, and the street seemed strangely far from his room. Part of him wanted to turn around before this became another thing he had tried and failed to do.",
+      "shadow": false,
+      "time": "dawn",
+      "shot": "close",
+      "event": "Outside, he hesitates, shoulders tense, considering turning back.",
+      "prop_text": ""
     },
     {
       "location": "street",
       "action": "walk",
-      "emotion": "determined",
-      "narration": "She steps out into the cool morning air, feeling the sun's gentle embrace. The world stretches before her, vast and inviting.",
-      "shadow": false
+      "emotion": "tired",
+      "narration": "He did not suddenly feel better. He walked past one doorway, then another, watching his shoes meet the pavement. He wasn't trying to become a different person before breakfast. For now, he was only walking to the end of the street.",
+      "shadow": false,
+      "time": "dawn",
+      "shot": "wide",
+      "event": "He walks slowly toward the park, without an instant change in mood.",
+      "prop_text": ""
     },
     {
       "location": "park",
       "action": "sit",
-      "emotion": "worried",
-      "narration": "She almost turns back, but sits quietly in the park. She hesitates before her next step.",
-      "shadow": false
+      "emotion": "sad",
+      "narration": "At the park, he sat down. His chest still felt heavy. For a moment, he was disappointed; some quiet part of him had hoped the walk would fix more than a walk could fix. He let his hands rest on his knees.",
+      "shadow": false,
+      "time": "dawn",
+      "shot": "wide",
+      "event": "He sits on a bench and lets the effort show.",
+      "prop_text": ""
     },
     {
       "location": "park",
       "action": "sit",
+      "emotion": "neutral",
+      "narration": "The bench was cool through his clothes. A leaf scraped across the path, caught, and moved again. He noticed his breathing without trying to improve it. Nothing remarkable happened. But for a little while, he stopped measuring whether he was doing enough.",
+      "shadow": false,
+      "time": "day",
+      "shot": "close",
+      "event": "He notices the bench, wind and breathing, without forcing happiness.",
+      "prop_text": ""
+    },
+    {
+      "location": "park",
+      "action": "phone",
       "emotion": "worried",
-      "narration": "She almost turns back, but sits quietly in the park.",
-      "shadow": false
+      "narration": "When he took out his phone, he opened a message instead of the feed. He typed that he had been struggling, and that he didn't want to keep pretending otherwise. His thumb hovered for a long time. Then he sent it.",
+      "shadow": false,
+      "time": "day",
+      "shot": "wide",
+      "event": "He opens a message and finally asks for support.",
+      "prop_text": "I haven't been doing well.|Could we talk?"
+    },
+    {
+      "location": "desk",
+      "action": "write",
+      "emotion": "neutral",
+      "narration": "Back home, the unfinished list was exactly where he had left it. He did not fill the page. Beneath the two words, he wrote a different next step: arrange an appointment. He could ask for help before he knew how to explain everything.",
+      "shadow": false,
+      "time": "day",
+      "shot": "wide",
+      "event": "Back home he writes a practical next step: arrange professional support.",
+      "prop_text": "Arrange an appointment."
     },
     {
       "location": "rooftop",
-      "action": "reach",
-      "emotion": "happy",
-      "narration": "She pauses, takes a deep breath, and steps back to try again tomorrow.",
-      "shadow": false
+      "action": "idle",
+      "emotion": "neutral",
+      "narration": "Later, above the waking city, he stood without asking himself to feel grateful or strong. Tomorrow might still be difficult. He had not solved his life in a morning. But someone knew he was struggling now. He wouldn't have to hide all of it.",
+      "shadow": false,
+      "time": "day",
+      "shot": "close",
+      "event": "A quiet ending. The struggle remains, but it no longer has to stay hidden.",
+      "prop_text": ""
     }
   ],
-  "brief_beats": [
-    {
-      "scene": "scene_1",
-      "event": "A bald young woman spends her evenings scrolling alone in her bedroom.",
-      "setting": "bedroom",
-      "action": "phone"
-    },
-    {
-      "scene": "scene_2",
-      "event": "A bald young woman spends her evenings scrolling alone in her bedroom.",
-      "setting": "bedroom",
-      "action": "phone"
-    },
-    {
-      "scene": "scene_3",
-      "event": "She puts her phone down and writes one tiny goal at her desk.",
-      "setting": "desk",
-      "action": "write"
-    },
-    {
-      "scene": "scene_4",
-      "event": "She puts her phone down and writes one tiny goal at her desk.",
-      "setting": "desk",
-      "action": "write"
-    },
-    {
-      "scene": "scene_5",
-      "event": "The next morning she walks outside.",
-      "setting": "street",
-      "action": "walk"
-    },
-    {
-      "scene": "scene_6",
-      "event": "She almost turns back, but sits quietly in the park.",
-      "setting": "park",
-      "action": "sit"
-    },
-    {
-      "scene": "scene_7",
-      "event": "She almost turns back, but sits quietly in the park.",
-      "setting": "park",
-      "action": "sit"
-    },
-    {
-      "scene": "scene_8",
-      "event": "End on the rooftop with her choosing to try again tomorrow.",
-      "setting": "rooftop",
-      "action": "reach"
-    }
-  ],
-  "planner_adaptations": []
+  "target_seconds": 210.0,
+  "writer": "authored-depression-screenplay-v2"
 }

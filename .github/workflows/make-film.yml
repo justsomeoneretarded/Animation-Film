@@ -44,6 +44,17 @@ jobs:
           cache-dependency-path: |
             requirements.txt
             requirements-ai.txt
+      - name: Reuse downloaded speech voice
+        uses: actions/cache@v4
+        with:
+          path: .cache/voices
+          key: piper-ljspeech-medium-v1
+      - name: Reuse local story weights
+        if: "${{ !contains(inputs.brief, 'authored depression story') && !contains(inputs.brief, 'sample: depressed') }}"
+        uses: actions/cache@v4
+        with:
+          path: .cache/models
+          key: qwen3-4b-instruct-2507-q4km-v1
       - name: Install system tools
         run: |
           sudo apt-get update -qq
