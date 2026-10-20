@@ -1,35 +1,114 @@
 {
   "title": "One Small Step",
-  "brief": "A woman puts down her phone, writes a small goal, and walks outside. She decides to try again tomorrow.",
+  "brief": "A bald young woman spends her evenings scrolling alone in her bedroom. She puts her phone down and writes one tiny goal at her desk. The next morning she walks outside. She almost turns back, but sits quietly in the park. End on the rooftop with her choosing to try again tomorrow. Reflective, quiet, hopeful. Female lead. One visible protagonist throughout.",
   "character": "female",
   "scenes": [
     {
       "location": "bedroom",
-      "action": "sleep",
+      "action": "phone",
       "emotion": "sad",
-      "narration": "She wakes up feeling stuck.",
+      "narration": "The woman pauses, her fingers hovering over the screen. She hesitates for a moment before continuing to scroll.",
+      "shadow": true
+    },
+    {
+      "location": "bedroom",
+      "action": "phone",
+      "emotion": "sad",
+      "narration": "She taps through apps, her fingers moving in rhythm. Each scroll reveals another page of images and text, each one more private than the last.",
       "shadow": true
     },
     {
       "location": "desk",
       "action": "write",
       "emotion": "determined",
-      "narration": "She writes down one small goal.",
+      "narration": "She puts her phone down, the screen dimming as she focuses on her desk. The pen moves slowly across the paper, each stroke a small step towards clarity.",
       "shadow": true
+    },
+    {
+      "location": "desk",
+      "action": "write",
+      "emotion": "determined",
+      "narration": "She pauses, her fingers tracing the words on the screen as she puts her phone down. The room is quiet except for the gentle hum of the air conditioning.",
+      "shadow": false
     },
     {
       "location": "street",
       "action": "walk",
       "emotion": "determined",
-      "narration": "She walks outside despite her fear.",
+      "narration": "She steps out into the cool morning air, feeling the sun's gentle embrace. The world stretches before her, vast and inviting.",
       "shadow": false
     },
     {
       "location": "park",
       "action": "sit",
+      "emotion": "worried",
+      "narration": "She almost turns back, but sits quietly in the park. She hesitates before her next step.",
+      "shadow": false
+    },
+    {
+      "location": "park",
+      "action": "sit",
+      "emotion": "worried",
+      "narration": "She almost turns back, but sits quietly in the park.",
+      "shadow": false
+    },
+    {
+      "location": "rooftop",
+      "action": "reach",
       "emotion": "happy",
-      "narration": "She sits in the park and decides to try again tomorrow.",
+      "narration": "She pauses, takes a deep breath, and steps back to try again tomorrow.",
       "shadow": false
     }
-  ]
+  ],
+  "brief_beats": [
+    {
+      "scene": "scene_1",
+      "event": "A bald young woman spends her evenings scrolling alone in her bedroom.",
+      "setting": "bedroom",
+      "action": "phone"
+    },
+    {
+      "scene": "scene_2",
+      "event": "A bald young woman spends her evenings scrolling alone in her bedroom.",
+      "setting": "bedroom",
+      "action": "phone"
+    },
+    {
+      "scene": "scene_3",
+      "event": "She puts her phone down and writes one tiny goal at her desk.",
+      "setting": "desk",
+      "action": "write"
+    },
+    {
+      "scene": "scene_4",
+      "event": "She puts her phone down and writes one tiny goal at her desk.",
+      "setting": "desk",
+      "action": "write"
+    },
+    {
+      "scene": "scene_5",
+      "event": "The next morning she walks outside.",
+      "setting": "street",
+      "action": "walk"
+    },
+    {
+      "scene": "scene_6",
+      "event": "She almost turns back, but sits quietly in the park.",
+      "setting": "park",
+      "action": "sit"
+    },
+    {
+      "scene": "scene_7",
+      "event": "She almost turns back, but sits quietly in the park.",
+      "setting": "park",
+      "action": "sit"
+    },
+    {
+      "scene": "scene_8",
+      "event": "End on the rooftop with her choosing to try again tomorrow.",
+      "setting": "rooftop",
+      "action": "reach"
+    }
+  ],
+  "planner_adaptations": []
 }

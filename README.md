@@ -2,9 +2,9 @@
 
 Turn **a title and a story brief** into an original, narrated 2D short film with GitHub Actions. No API keys, paid inference service, GPU, or thumbnail generation.
 
-[View the two original characters](examples/characters.png) · [View a storyboard](examples/storyboard.jpg) · [Download a 20-second narrated sample](examples/sample.mp4)
+[View the two original characters](examples/characters.png) · [View a storyboard](examples/storyboard.jpg) · [Download the complete narrated sample](examples/sample.mp4)
 
-The included sample uses the explicit template planner and is compressed to 540p for repository size. The production workflow uses the AI planner and renders 1080p.
+The included sample was made from a title and brief using the AI planner, then compressed to 540p for repository size. The production workflow renders 1080p.
 
 ## Make your first film
 
