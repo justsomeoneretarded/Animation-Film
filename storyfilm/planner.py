@@ -108,7 +108,19 @@ def ai_plan(title, brief, character='auto', model_id='Qwen/Qwen2.5-1.5B-Instruct
     torch.set_num_threads(4)
     print(f'Loading local story model: {model_id}', flush=True)
     tokenizer = AutoTokenizer.from_pretrained(model_id)
-    model = AutoModelForCausalLM.from_pretrained(model_id, dtype=torch.float32)
+    # Load half-precision weights without doing half-precision CPU inference.
+    # Quantize one linear layer at a time to keep peak memory below small-runner limits.
+    model = AutoModelForCausalLM.from_pretrained(model_id, dtype=torch.float16)
+    names=[name for name,module in model.named_modules()
+           if isinstance(module,torch.nn.Linear) and name!='lm_head']
+    for name in names:
+        module=model.get_submodule(name).float()
+        module.qconfig=torch.ao.quantization.default_dynamic_qconfig
+        packed=torch.ao.nn.quantized.dynamic.Linear.from_float(module)
+        parent,_,attribute=name.rpartition('.')
+        setattr(model.get_submodule(parent),attribute,packed)
+        del module,packed
+    model.float().eval()
     prompt = f'''Write an original short animated film from the user's title and brief.
 Return ONLY valid JSON with character (male or female), scenes (8 scenes).
 Each scene: location, action, emotion, shadow (boolean), narration (25-40 words).

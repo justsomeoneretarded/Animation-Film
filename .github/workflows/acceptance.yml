@@ -1,5 +1,5 @@
 name: Full AI film acceptance
-# Validate schema-constrained scene generation end to end.
+# Validate schema-constrained, CPU-int8 scene generation end to end.
 on:
   workflow_dispatch:
   push:

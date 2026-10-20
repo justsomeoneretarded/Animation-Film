@@ -24,7 +24,7 @@ A first run downloads approximately 3 GB of story-model weights plus dependencie
 
 ## What is included
 
-- Local Qwen2.5-1.5B-Instruct story planning with schema-constrained decoding: a brief becomes eight validated animated scenes.
+- Local Qwen2.5-1.5B-Instruct story planning with CPU int8 weights and schema-constrained decoding: a brief becomes eight validated animated scenes.
 - Two original procedural bald characters, male and female, selected once per film.
 - Bedroom, desk, street, park, gym and rooftop settings.
 - Idle, walk, sit, sleep, phone, write, exercise and reach poses, expressions and blinking.
