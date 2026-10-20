@@ -1,6 +1,14 @@
 name: Make a film
 run-name: Film — ${{ inputs.title }}
 on:
+  workflow_call:
+    inputs:
+      title:
+        required: true
+        type: string
+      brief:
+        required: true
+        type: string
   workflow_dispatch:
     inputs:
       title:

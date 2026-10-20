@@ -122,7 +122,7 @@ def main():
         plan=template_plan(args.title,args.brief,args.character)
     (args.out/'story.json').write_text(json.dumps(plan,indent=2,ensure_ascii=False))
     storyboard(plan,args.out);character_sheet(args.out)
-    timings=synthesize(plan,args.out,args.voice,duration_scale=.25 if args.preview else 1)
+    timings=synthesize(plan,args.out,args.voice,duration_scale=.25 if args.preview else 1,fps=args.fps)
     # Quantize every scene to frame boundaries to prevent cumulative caption drift.
     cursor=0
     for timing in timings:

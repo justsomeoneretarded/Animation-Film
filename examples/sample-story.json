@@ -1,0 +1,35 @@
+{
+  "title": "One Small Step",
+  "brief": "She wakes up feeling stuck. She writes down one small goal. She walks outside despite her fear. She sits in the park and decides to try again tomorrow.",
+  "character": "female",
+  "scenes": [
+    {
+      "location": "bedroom",
+      "action": "sleep",
+      "emotion": "sad",
+      "narration": "She wakes up feeling stuck.",
+      "shadow": true
+    },
+    {
+      "location": "desk",
+      "action": "write",
+      "emotion": "determined",
+      "narration": "She writes down one small goal.",
+      "shadow": true
+    },
+    {
+      "location": "street",
+      "action": "walk",
+      "emotion": "determined",
+      "narration": "She walks outside despite her fear.",
+      "shadow": false
+    },
+    {
+      "location": "park",
+      "action": "sit",
+      "emotion": "happy",
+      "narration": "She sits in the park and decides to try again tomorrow.",
+      "shadow": false
+    }
+  ]
+}

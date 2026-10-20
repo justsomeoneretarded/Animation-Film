@@ -40,7 +40,7 @@ def write_wave(path, samples, sr=24000):
         w.writeframes((np.clip(samples, -.98, .98)*32767).astype('<i2').tobytes())
 
 
-def synthesize(plan, out, engine='piper', cache='.cache/voices', duration_scale=1.):
+def synthesize(plan, out, engine='piper', cache='.cache/voices', duration_scale=1., fps=24):
     out=Path(out)
     voice=None
     if engine=='piper':
@@ -65,7 +65,7 @@ def synthesize(plan, out, engine='piper', cache='.cache/voices', duration_scale=
         if rate != sr:
             samples=np.interp(np.arange(round(len(samples)*sr/rate))*rate/sr,np.arange(len(samples)),samples).astype(np.float32)
         lead=int(.65*sr); tail=int(.9*sr)
-        duration=max(5,(len(samples)+lead+tail)/sr)*duration_scale
+        duration=round(max(5,(len(samples)+lead+tail)/sr)*duration_scale*fps)/fps
         # Preview scaling deliberately shortens scenes and omits the cut-off narration.
         sound=np.zeros(round(duration*sr),np.float32)
         if duration_scale==1:

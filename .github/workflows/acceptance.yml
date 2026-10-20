@@ -1,0 +1,14 @@
+name: Full AI film acceptance
+on:
+  workflow_dispatch:
+  push:
+    paths:
+      - .github/workflows/acceptance.yml
+permissions:
+  contents: read
+jobs:
+  example:
+    uses: ./.github/workflows/make-film.yml
+    with:
+      title: One Small Step
+      brief: A bald young woman spends her evenings scrolling alone in her bedroom. She puts her phone down and writes one tiny goal at her desk. The next morning she walks outside. She almost turns back, but sits quietly in the park. End on the rooftop with her choosing to try again tomorrow. Reflective, quiet, hopeful. Female lead. One visible protagonist throughout.

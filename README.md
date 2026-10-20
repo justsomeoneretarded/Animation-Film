@@ -2,6 +2,10 @@
 
 Turn **a title and a story brief** into an original, narrated 2D short film with GitHub Actions. No API keys, paid inference service, GPU, or thumbnail generation.
 
+[View the two original characters](examples/characters.png) · [View a storyboard](examples/storyboard.jpg) · [Download a 20-second narrated sample](examples/sample.mp4)
+
+The included sample uses the explicit template planner and is compressed to 540p for repository size. The production workflow uses the AI planner and renders 1080p.
+
 ## Make your first film
 
 1. Open this repository's **Actions** tab.
@@ -76,6 +80,6 @@ The template planner reuses the brief's sentences as narration and maps keywords
 python -m unittest discover -s tests -v
 ```
 
-`Check renderer` runs tests plus a small FFmpeg integration render on each push. `Make a film` runs only when manually requested. Title and brief enter through environment variables, never interpolated into shell commands; all external commands use argument arrays. Brief content is story data, not code. The workflow has read-only repository permissions.
+`Check renderer` runs tests plus a small FFmpeg integration render on each push. `Full AI film acceptance` tests the complete default pipeline with a sample female-led brief when that acceptance workflow is changed, or when manually requested. `Make a film` runs only when manually requested. Title and brief enter through environment variables, never interpolated into shell commands; all external commands use argument arrays. Brief content is story data, not code. The workflow has read-only repository permissions.
 
 Project layout: `planner.py` handles story generation and schema validation; `art.py` draws the assets; `audio.py` synthesizes speech and sound; `render.py` orchestrates and encodes; `verify.py` validates the finished media. See `THIRD_PARTY.md` for model/software licenses.
