@@ -1,0 +1,22 @@
+name: Check renderer
+on: [push, pull_request]
+permissions:
+  contents: read
+jobs:
+  check:
+    runs-on: ubuntu-24.04
+    timeout-minutes: 10
+    steps:
+      - uses: actions/checkout@v4
+      - uses: actions/setup-python@v5
+        with:
+          python-version: '3.11'
+      - run: python -m pip install -r requirements.txt
+      - run: python -m unittest discover -s tests -v
+      - run: sudo apt-get update -qq && sudo apt-get install -y ffmpeg fonts-dejavu-core
+      - name: Render a tiny end-to-end smoke film
+        env:
+          FILM_TITLE: One Small Step
+          FILM_BRIEF: She wakes up feeling stuck. She writes down a small goal. She walks outside. She feels ready to try again.
+        run: python -m storyfilm.render --planner template --voice none --preview --height 540 --fps 12 --out smoke
+      - run: python -m storyfilm.verify smoke/film.mp4 --height 540
