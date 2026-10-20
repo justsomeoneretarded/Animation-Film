@@ -92,6 +92,7 @@ def main():
     p.add_argument('--brief',default=os.getenv('FILM_BRIEF'))
     p.add_argument('--character',choices=['auto','male','female'],default='auto')
     p.add_argument('--planner',choices=['ai','template'],default='ai')
+    p.add_argument('--strict-json',action='store_true',help='Optional token-by-token JSON enforcement; slower on small CPUs')
     p.add_argument('--model',default='Qwen/Qwen2.5-1.5B-Instruct')
     p.add_argument('--voice',choices=['piper','espeak','none'],default='piper')
     p.add_argument('--plan',type=Path,help='Render a previously saved story.json instead of planning again')
@@ -113,7 +114,7 @@ def main():
         plan=validate(json.loads(args.plan.read_text()),args.title,args.brief,args.character);source='saved-plan'
     elif args.planner=='ai':
         try:
-            plan=ai_plan(args.title,args.brief,args.character,args.model,diagnostics_path=args.out/'ai-response.txt')
+            plan=ai_plan(args.title,args.brief,args.character,args.model,diagnostics_path=args.out/'ai-response.txt',strict_json=args.strict_json)
         except Exception as exc:
             if not args.allow_template_fallback:
                 raise RuntimeError('AI planning failed. Retry or explicitly choose --planner template. No misleading fallback was rendered.') from exc

@@ -135,7 +135,7 @@ def narration_schema():
     return {'type':'object','properties':properties,'required':list(properties),'additionalProperties':False}
 
 
-def ai_plan(title, brief, character='auto', model_id='Qwen/Qwen2.5-1.5B-Instruct', diagnostics_path=None):
+def ai_plan(title, brief, character='auto', model_id='Qwen/Qwen2.5-1.5B-Instruct', diagnostics_path=None, strict_json=False):
     import torch
     from transformers import AutoTokenizer, AutoModelForCausalLM
     from lmformatenforcer import JsonSchemaParser
@@ -175,11 +175,13 @@ ORDERED SCENES: {json.dumps(beats)}'''
     print('Story model loaded; writing the scene plan on CPU.', flush=True)
     for attempt in range(2):
         inputs = tokenizer.apply_chat_template(messages, add_generation_prompt=True, return_tensors='pt')
-        constraint=build_transformers_prefix_allowed_tokens_fn(tokenizer,JsonSchemaParser(narration_schema()))
+        options={}
+        if strict_json:
+            options['prefix_allowed_tokens_fn']=build_transformers_prefix_allowed_tokens_fn(tokenizer,JsonSchemaParser(narration_schema()))
         with torch.inference_mode():
             output = model.generate(inputs, attention_mask=torch.ones_like(inputs), max_new_tokens=1600,
                                     do_sample=False, pad_token_id=tokenizer.eos_token_id,
-                                    prefix_allowed_tokens_fn=constraint)
+                                    **options)
         raw = tokenizer.decode(output[0][inputs.shape[1]:], skip_special_tokens=True)
         if diagnostics_path:
             Path(diagnostics_path).write_text(raw)
@@ -188,6 +190,8 @@ ORDERED SCENES: {json.dumps(beats)}'''
             if start < 0 or end < start:
                 raise ValueError('Model did not return JSON')
             generated=json.loads(raw[start:end+1])
+            if set(generated)!={f'scene_{i+1}' for i in range(8)}:
+                raise ValueError('Narration must contain exactly scene_1 through scene_8')
             for i,scene in enumerate(scenes):
                 scene['narration']=generated[f'scene_{i+1}']
             result=validate({'character':lead,'scenes':scenes},title,brief,lead)

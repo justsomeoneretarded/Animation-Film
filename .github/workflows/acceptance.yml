@@ -1,5 +1,5 @@
 name: Full AI film acceptance
-# Validate brief-anchored narration and CPU-int8 rendering without a reusable-workflow lock.
+# Validate the fast CPU narration path and full 1080p render.
 on:
   workflow_dispatch:
   push:
