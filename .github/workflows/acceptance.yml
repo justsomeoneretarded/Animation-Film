@@ -1,5 +1,5 @@
 name: Full AI film acceptance
-# Validate official GGUF inference, spoken narration and full 1080p rendering.
+# Validate the authored screenplay, spoken narration and native 1080p12 rendering.
 on:
   workflow_dispatch:
   push:
