@@ -385,12 +385,16 @@ def insert_shot(im,scene,gender,t,progress):
         d.box((169,149,791,459),'#b89d7f','#394755',3,r=16)
         d.path([('M',237,181),('L',696,166),('L',731,437),('L',214,442),('L',237,181)],'#f1e7ce','#8b877a',2)
         for yy in range(218,419,28):d.line([(247,yy),(690,yy-8)],'#c5c8b4',1)
-        if not text:text='One thing at a time.'
         chars=round(len(text)*smooth(0,1,progress*1.4))
         chunks=text[:chars].split('|')
         for j,line in enumerate(chunks):
             for k,wrapped_line in enumerate(wrapped(line,810,34)):
                 d.text((268,229+j*65+k*25),wrapped_line,17,'#48545a')
+        if not text:
+            # Unspecified handwriting stays abstract; never invent a quoted goal.
+            for j in range(4):
+                amount=max(0,min(1,progress*5-j))
+                if amount:d.line([(269,233+j*28),(269+amount*(220-j*19),230+j*28)],'#69726c',2)
         px=420+min(195,progress*220);py=287+math.sin(t*3)*3
         capsule(d,(744,542),(px+79,py+50),54,sleeve)
         d.ellipse((px-9,py-5,px+83,py+67),skin,INK,3)

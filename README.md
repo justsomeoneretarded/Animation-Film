@@ -36,7 +36,7 @@ Use 4–8 clear chronological events with an obstacle, a choice and an ending. I
 - Seated poses aligned to the bench; foreground desk occlusion; phone grips, thumb scrolling, writing hands, and alternating walk cycles.
 - Establishing, medium and close shots within every story beat. Phone and notebook inserts show typing, sending and writing. Captions remain sharp at output resolution.
 - All drawing paths rasterized directly at **1920×1080**, rather than enlarging 540p frames. Playback defaults to **12 FPS**.
-- A complete authored depression story, plus a larger local **Qwen3-4B-Instruct-2507 Q4_K_M** writer for other stories. The writer sees the whole plot and writes three connected acts, retaining prior narration for continuity.
+- A complete authored depression story, plus a larger local **Qwen3-4B-Instruct-2507 Q4_K_M** writer for other stories. The writer sees the whole plot and writes three connected acts, retaining prior narration for continuity. Obvious action mismatches trigger a targeted repair; valid acts are checkpointed for local retries.
 - Twelve story beats, approximately 390–600 words. Production targets **210 seconds** with modest speech tempo correction, rather than repeating a short script or adding minutes of silence. Invalid lengths fail clearly.
 - Local Piper narration, original ambient score, footsteps, phone taps, pencil sounds, outdoor air and birds. No downloaded music.
 

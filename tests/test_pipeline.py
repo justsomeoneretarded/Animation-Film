@@ -3,7 +3,7 @@ import tempfile
 import unittest
 from pathlib import Path
 from PIL import ImageChops,ImageStat
-from storyfilm.planner import template_plan,validate,brief_outline,validate_narrations,depression_plan,BEATS,ACTIONS
+from storyfilm.planner import template_plan,validate,brief_outline,validate_narrations,depression_plan,BEATS,ACTIONS,narration_issues
 from storyfilm.render import captions,timestamp
 from storyfilm.art import frame,character,background
 from storyfilm.audio import synthesize,read_wave
@@ -87,5 +87,8 @@ class PipelineTests(unittest.TestCase):
             t=synthesize(template_plan('Title',BRIEF),Path(directory),'none',duration_scale=.25,fps=12)
             samples,sr=read_wave(Path(directory)/'soundtrack.wav')
             self.assertAlmostEqual(len(samples)/sr,sum(v['duration'] for v in t),places=4)
+    def test_visual_continuity_rejects_impossible_contact(self):
+        self.assertTrue(narration_issues('She sits without touching it, and she writes another line.',{'action':'walk'}))
+        self.assertFalse(narration_issues('She walks slowly along the pavement, then pauses at the curb.',{'action':'walk'}))
     def test_timestamp_rounding(self):self.assertEqual(timestamp(59.9999),'00:01:00,000')
 if __name__=='__main__':unittest.main()
