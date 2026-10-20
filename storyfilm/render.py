@@ -121,6 +121,8 @@ def main():
             plan=template_plan(args.title,args.brief,args.character);source='template-fallback'
     else:
         plan=template_plan(args.title,args.brief,args.character)
+    if plan.get('writer','').startswith('authored-'):
+        source='authored'
     (args.out/'story.json').write_text(json.dumps(plan,indent=2,ensure_ascii=False))
     print(f"Planned {len(plan['scenes'])} scenes with the {plan['character']} lead.",flush=True)
     storyboard(plan,args.out);character_sheet(args.out)

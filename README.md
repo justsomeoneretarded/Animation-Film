@@ -2,7 +2,7 @@
 
 Make an original narrated **3–4 minute animated film at 1920×1080, 12 FPS**, using a title and brief in GitHub Actions. No API keys, paid model services, GPU or thumbnails.
 
-[Character designs](examples/characters.png) · [Storyboard](examples/storyboard.jpg) · [Watch the sample](examples/sample.mp4)
+[Character designs](examples/characters.png) · [Read the screenplay](examples/Depressed.md) · [Storyboard](examples/storyboard.jpg) · [Watch the sample](examples/sample.mp4)
 
 ## Make a film
 
@@ -33,7 +33,7 @@ Use 4–8 clear chronological events with an obstacle, a choice and an ending. I
 - Rebuilt characters: rounded heads, thick articulated limbs, clothed bodies, shading, hands, shoes and a neck. The female has hair.
 - Larger expressive eyes, worried/sad/tired/determined expressions, pupils, blinks, tears, head tilts, breathing and gestures.
 - Bedroom, desk, street, park, gym and rooftop rebuilt with furniture, windows, plants, perspective, lighting and distinct night/dawn palettes.
-- Seated poses aligned to the bench; foreground desk occlusion; phone grips, thumb scrolling, writing hands, and planted walk cycles.
+- Seated poses aligned to the bench; foreground desk occlusion; phone grips, thumb scrolling, writing hands, and alternating walk cycles.
 - Establishing, medium and close shots within every story beat. Phone and notebook inserts show typing, sending and writing. Captions remain sharp at output resolution.
 - All drawing paths rasterized directly at **1920×1080**, rather than enlarging 540p frames. Playback defaults to **12 FPS**.
 - A complete authored depression story, plus a larger local **Qwen3-4B-Instruct-2507 Q4_K_M** writer for other stories. The writer sees the whole plot and writes three connected acts, retaining prior narration for continuity.
