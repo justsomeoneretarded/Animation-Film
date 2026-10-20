@@ -21,9 +21,6 @@ on:
         type: string
 permissions:
   contents: read
-concurrency:
-  group: film-${{ github.ref }}
-  cancel-in-progress: false
 jobs:
   render:
     runs-on: ubuntu-24.04
