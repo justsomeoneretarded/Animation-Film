@@ -48,7 +48,7 @@ def storyboard(plan,out):
 def character_sheet(out):
     im=Image.new('RGBA',(W,H),'#243344')
     d=ImageDraw.Draw(im)
-    d.text((86,66),'STORYFILM / ORIGINAL REUSABLE LEADS',font=font(44),fill='#e8e4dc')
+    d.text((86,34),'STORYFILM / ORIGINAL REUSABLE LEADS',font=font(30),fill='#e8e4dc')
     character(im,280,461,1,'female','idle','neutral',.94)
     character(im,680,461,1,'male','idle','neutral',.94)
     d.text((420,974),'FEMALE LEAD',font=font(36),fill='#d0d7e4')

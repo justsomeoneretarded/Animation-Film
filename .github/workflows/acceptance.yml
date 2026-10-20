@@ -1,5 +1,5 @@
 name: Full AI film acceptance
-# Validate the authored screenplay, spoken narration and native 1080p12 rendering.
+# Validate visible necks, stable framing and the revised message story at 1080p12.
 on:
   workflow_dispatch:
   push:

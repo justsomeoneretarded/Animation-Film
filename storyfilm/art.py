@@ -28,15 +28,15 @@ def wrapped(text,width,size):
     return lines+([line] if line else [])
 
 class Draw:
-    def __init__(self,im):self.d=ImageDraw.Draw(im)
+    def __init__(self,im,dy=0):self.d=ImageDraw.Draw(im);self.dy=dy
     def box(self,b,fill,outline=None,width=1,r=0):
-        b=tuple(round(v*S) for v in b)
+        b=tuple(round((v+(self.dy if i%2 else 0))*S) for i,v in enumerate(b))
         if r:self.d.rounded_rectangle(b,round(r*S),fill=fill,outline=outline,width=max(1,round(width*S)))
         else:self.d.rectangle(b,fill=fill,outline=outline,width=max(1,round(width*S)))
-    def ellipse(self,b,fill,outline=None,width=1):self.d.ellipse(tuple(round(v*S) for v in b),fill=fill,outline=outline,width=max(1,round(width*S)))
-    def line(self,p,fill,width=1):self.d.line([(round(x*S),round(y*S)) for x,y in p],fill=fill,width=max(1,round(width*S)),joint='curve')
-    def polygon(self,p,fill):self.d.polygon([(round(x*S),round(y*S)) for x,y in p],fill=fill)
-    def text(self,p,text,size=14,fill='#dce5ee',stroke=0):self.d.text((round(p[0]*S),round(p[1]*S)),text,font=font(size*S),fill=fill,stroke_width=round(stroke*S),stroke_fill=INK)
+    def ellipse(self,b,fill,outline=None,width=1):self.d.ellipse(tuple(round((v+(self.dy if i%2 else 0))*S) for i,v in enumerate(b)),fill=fill,outline=outline,width=max(1,round(width*S)))
+    def line(self,p,fill,width=1):self.d.line([(round(x*S),round((y+self.dy)*S)) for x,y in p],fill=fill,width=max(1,round(width*S)),joint='curve')
+    def polygon(self,p,fill):self.d.polygon([(round(x*S),round((y+self.dy)*S)) for x,y in p],fill=fill)
+    def text(self,p,text,size=14,fill='#dce5ee',stroke=0):self.d.text((round(p[0]*S),round((p[1]+self.dy)*S)),text,font=font(size*S),fill=fill,stroke_width=round(stroke*S),stroke_fill=INK)
     def path(self,commands,fill,outline=None,width=1):
         pts=[];cur=(0,0)
         for c in commands:
@@ -56,6 +56,13 @@ def capsule(d,a,b,width,fill,outline=INK):
         for x,y in (a,b):d.ellipse((x-width/2-2,y-width/2-2,x+width/2+2,y+width/2+2),outline)
     d.line([a,b],fill,width)
     for x,y in (a,b):d.ellipse((x-width/2,y-width/2,x+width/2,y+width/2),fill)
+
+def jointed(d,points,width,fill):
+    # One continuous silhouette eliminates mechanical rings at elbows/knees.
+    for color,w in [(INK,width+4),(fill,width)]:
+        d.line(points,color,w)
+        for x,y in points:d.ellipse((x-w/2,y-w/2,x+w/2,y+w/2),color)
+
 
 def glow(im,xy,color,radius=80,strength=80):
     layer=Image.new('RGBA',im.size);d=Draw(layer);x,y=xy
@@ -186,19 +193,19 @@ def background(location,day='night'):
     return im
 
 
-def character(im,x,floor,t,gender='male',action='idle',emotion='neutral',scale=1.,shadow=False,progress=.5):
+def character(im,x,floor,t,gender='male',action='idle',emotion='neutral',scale=1.,shadow=False,progress=.5,walk_speed=24):
     """Rounded clothed rig: articulated thick limbs, shaded head and independent face.
 
     Local floor anchor is (180,432), so seated feet and planted walk cycles share
     exact scene contact coordinates. t is animation time, progress is shot action.
     """
-    layer=Image.new('RGBA',(720,940));d=Draw(layer)
+    layer=Image.new('RGBA',(720,1004));d=Draw(layer,dy=32)
     sad=emotion in {'sad','tired','worried'}
-    breathe=math.sin(t*1.8)*1.8
+    breathe=math.sin(t*1.45)*1.0
     sitting=action in {'sit','phone','write'}
     hip=304 if sitting else 310
-    bob=math.sin(t*1.8)*1.2
-    if action=='walk':bob=-abs(math.sin(t*3.6))*5
+    bob=0
+    if action=='walk':bob=-abs(math.sin(t*3.6))*2
     top=194+bob+breathe
     hoodie='#7e9aab' if gender=='male' else '#ac8f91'
     shade='#567488' if gender=='male' else '#806b7b'
@@ -211,17 +218,25 @@ def character(im,x,floor,t,gender='male',action='idle',emotion='neutral',scale=1
         if sitting:
             knee=(180+j*35,345);foot=(174+j*43,425)
         elif action=='walk':
-            phase=t*3.6+j*math.pi;ankle=math.sin(phase)*38
-            foot=(161+j*38+ankle,425-max(0,math.cos(phase))*24)
-            knee=(161+j*38+ankle*.45,363-max(0,math.cos(phase))*12)
+            phase=(t*3.6+j*math.pi)%(2*math.pi)
+            span=walk_speed*math.pi/7.2
+            if phase<math.pi:
+                ankle=span*(1-2*phase/math.pi);lift=0
+            else:
+                q=(phase-math.pi)/math.pi
+                ankle=smooth(-span,span,q);lift=math.sin(q*math.pi)*22
+            foot=(161+j*38+ankle,425-lift)
+            knee=(161+j*38+ankle*.45,363-lift*.5)
         else:
             knee=(157+j*47,365);foot=(151+j*57,426)
-        capsule(d,(157+j*46,hip),knee,29,pants)
-        capsule(d,knee,foot,27,pants)
-        fx,fy=foot;d.box((fx-18,fy-10,fx+26,fy+9),'#23323e',edge,2,r=12)
-        d.line([(fx-15,fy+5),(fx+23,fy+5)],'#a3adb0',3);feet.append(foot)
+        jointed(d,[(157+j*46,hip),knee,foot],28,pants)
+        fx,fy=foot;d.box((fx-18,fy-10,fx+26,fy+15),'#23323e',edge,2,r=12)
+        d.line([(fx-15,fy+10),(fx+23,fy+10)],'#a3adb0',3);feet.append(foot)
     # A rounded neck joins the head to the hoodie.
-    d.box((158,top-39,203,top+6),skin,edge,2,r=17)
+    # Visible 25-unit neck between jaw and collar; shaded under the chin.
+    d.path([('M',163,top-63),('L',199,top-63),('L',199,top-22),('C',199,top-14,206,top-10,208,top-4),('C',190,top+5,173,top+5,154,top-4),('C',156,top-13,163,top-16,163,top-22),('L',163,top-63)],skin,edge,2)
+    d.path([('M',187,top-61),('L',199,top-61),('L',199,top-5),('C',196,top-1,191,top,187,top-1),('L',187,top-61)],skinshade)
+    d.box((165,top-61,197,top-42),'#ac9785',r=6)
     # Rounded hoodie silhouette, shoulders, waist and soft cloth folds.
     d.path([('M',146,top-12),('C',130,top-5,116,top+4,116,top+30),('C',118,top+65,123,hip-22,125,hip),('C',149,hip+18,202,hip+18,231,hip),('C',235,hip-30,238,top+51,241,top+30),('C',243,top+5,222,top-8,208,top-12),('L',146,top-12)],hoodie,edge,3)
     d.path([('M',126,top+30),('C',137,top+53,135,hip-5,146,hip+5),('C',171,hip+14,213,hip+10,231,hip),('L',233,hip-18),('C',193,hip-6,153,hip-9,146,top+27)],shade)
@@ -231,7 +246,7 @@ def character(im,x,floor,t,gender='male',action='idle',emotion='neutral',scale=1
     d.path([('M',150,hip-30),('C',160,hip-42,196,hip-42,209,hip-30),('L',206,hip-12),('L',151,hip-12),('L',150,hip-30)],shade,None)
     d.line([(148,hip-30),(157,hip-18)],edge,1);d.line([(209,hip-30),(201,hip-18)],edge,1)
     # Arms and palms are independent; gesture curves follow the current action.
-    swing=math.sin(t*3.6)*23 if action=='walk' else math.sin(t*1.7)*2
+    swing=math.sin(t*3.6)*10 if action=='walk' else math.sin(t*1.7)*2
     if action=='phone':
         lift=smooth(12,0,progress*4)
         left=[(126,top+19),(112,top+66),(166,top+58+lift)]
@@ -254,8 +269,7 @@ def character(im,x,floor,t,gender='male',action='idle',emotion='neutral',scale=1
         left=[(126,top+20),(112+swing*.5,top+69),(116+swing,top+110)]
         right=[(229,top+20),(246-swing*.5,top+69),(241-swing,top+110)]
     for arm in (left,right):
-        capsule(d,arm[0],arm[1],27,hoodie)
-        capsule(d,arm[1],arm[2],25,hoodie)
+        jointed(d,arm,26,hoodie)
         ax,ay=arm[2];d.ellipse((ax-14,ay-5,ax+14,ay+21),skin,edge,2)
         d.path([('M',ax-8,ay+7),('C',ax-4,ay+11,ax+3,ay+11,ax+7,ay+6)],None,skinshade,1)
     # Props match palms; animated thumb and pen movement gives readable contact.
@@ -288,7 +302,7 @@ def character(im,x,floor,t,gender='male',action='idle',emotion='neutral',scale=1
     blink=(t%4.15)<.16 or (t%7.1)<.12
     if action=='sleep':blink=True
     ey=105 if sad else 99
-    gaze_x=math.sin(t*.7)*2+(3 if action in {'phone','write'} else 0)
+    gaze_x=3 if action in {'phone','write'} else smooth(-2,2,progress)
     gaze_y=5 if action in {'phone','write'} or sad else 0
     for ex in (70,130):
         if sad:
@@ -326,14 +340,14 @@ def character(im,x,floor,t,gender='male',action='idle',emotion='neutral',scale=1
         hd.path([('M',27,82),('C',25,37,45,15,91,13),('C',116,12,158,24,170,60),('L',170,96),('C',150,83,136,66,128,42),('C',97,66,56,47,27,82)],'#3e3541',edge,2)
         hd.path([('M',39,54),('C',65,29,102,25,129,34)],None,'#7c6167',3)
         hd.path([('M',163,83),('C',165,123,170,149,159,166)],None,'#6c545f',5)
-    tilt=(-7 if sad else 2)+math.sin(t*1.2)*2.5+math.sin(progress*math.pi*2)*3
-    if action in {'phone','write'}:tilt=-10+math.sin(t*.9)*2
+    tilt=smooth(-4 if sad else 0,-2 if sad else 1,progress)
+    if action in {'phone','write'}:tilt=-5
     if action=='reach':tilt=smooth(-6,6,progress)
-    head=head.rotate(tilt,resample=Image.Resampling.BICUBIC,expand=False)
-    layer.alpha_composite(head,(160,round((top-187)*S)))
+    head=head.rotate(tilt,resample=Image.Resampling.BICUBIC,center=(200,334),expand=False)
+    layer.alpha_composite(head,(160,round((top-204+32)*S)))
     if action=='sleep':layer=layer.rotate(81,resample=Image.Resampling.BICUBIC,expand=True)
     if scale!=1:layer=layer.resize((round(layer.width*scale),round(layer.height*scale)),Image.Resampling.LANCZOS)
-    dest=(round(x*S-layer.width/2),round(floor*S-432*S*scale))
+    dest=(round(x*S-layer.width/2),round(floor*S-464*S*scale))
     if action=='sleep':dest=(round(x*S-layer.width/2),round(floor*S-layer.height*.62))
     im.alpha_composite(layer,dest)
 
@@ -411,12 +425,14 @@ def frame(scene,gender,title,t,duration,index,total,subtitle=''):
     day=scene.get('time','dawn' if index>=total*.65 else 'night')
     im=background(scene['location'],day).copy();d=Draw(im)
     act=scene['action'];location=scene['location']
-    # Three actual compositions per beat; each cut has its own acting interval.
-    cut=min(2,int(progress*3));local=(progress*3)%1
+    # One deliberate cut per beat, with locked framing on either side.
+    detail=progress>=.58
+    cut=2 if detail and act in {'phone','write'} else 1 if detail else 0
+    local=max(0,(progress-.58)/.42) if detail else progress/.58
     if act=='walk':
         # Full cycle advances ~60 units / step; horizontal progression is bounded
         # to the street while background movement supplies the longer walk.
-        x=350+min(t*24,270);floor=463;scale=.84
+        x=350+progress*280;floor=463;scale=.84
     elif location=='park' and act in {'sit','phone'}:x=493;floor=474;scale=.90
     elif location=='desk':x=505;floor=520;scale=.94
     elif location=='bedroom' and act in {'sit','phone'}:x=584;floor=476;scale=.87
@@ -425,7 +441,7 @@ def frame(scene,gender,title,t,duration,index,total,subtitle=''):
     # Contact shadow is soft, anchored to the feet or furniture.
     shadow=Image.new('RGBA',im.size);sd=Draw(shadow)
     sd.ellipse((x-64,floor-8,x+65,floor+12),(9,18,27,105));im.alpha_composite(shadow.filter(ImageFilter.GaussianBlur(9)))
-    character(im,x,floor,t,gender,act,scene['emotion'],scale,False,progress)
+    character(im,x,floor,t,gender,act,scene['emotion'],scale,False,progress,walk_speed=280/max(.01,duration))
     foreground(im,location)
     # Window rain early in the story; leaves and light later, never over faces.
     d=Draw(im)
@@ -440,11 +456,11 @@ def frame(scene,gender,title,t,duration,index,total,subtitle=''):
     # Establishing, medium and face/action close-up shots. Full native-resolution
     # paths make these crops clean. Crop target follows the protagonist.
     order=scene.get('shot','wide')
-    zooms=(1.0,1.47,1.95) if order!='close' else (1.8,1.25,1.55)
-    z=zooms[cut]+.035*local
-    focus_x=x if cut else 480
-    head_y=floor-315*scale
-    focus_y=273 if cut==0 else head_y+75 if cut==1 else head_y+36
+    # Preserve space above the scalp, neck and shoulders in close shots.
+    z=(1.18 if order=='close' else 1.0) if cut==0 else 1.42
+    focus_x=480 if cut==0 else x
+    focus_y=255 if cut==0 else 232
+    if act=='walk':focus_x=480;focus_y=270
     if act=='sleep':focus_y=320
     cw,ch=W/z,H/z
     left=max(0,min(W-cw,focus_x*S-cw/2));top=max(0,min(H-ch,focus_y*S-ch/2))

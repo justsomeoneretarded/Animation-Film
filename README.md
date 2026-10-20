@@ -15,9 +15,9 @@ To render the fully authored sample, enter:
 **Title:** `Depressed`
 
 **Brief:**
-> Use the authored depression story. Male lead. A difficult night, an unfinished list, a short walk, a quiet park bench, and the decision to ask for support. A beginning rather than an instant recovery.
+> Use the authored depression story. Male lead. An unanswered message, an honest sentence in a notebook, a short walk, and the decision to ask for support. A beginning rather than an instant recovery.
 
-This exact phrase selects the included 495-word screenplay. Change **Male lead** to **Female lead** for the version with the female protagonist. This sample has a deliberate story arc and runs **3:30**. Selecting it uses the included plot; the rest of the brief does not rewrite that plot.
+This exact phrase selects the included 496-word screenplay. Change **Male lead** to **Female lead** for the version with the female protagonist. This sample has a deliberate story arc and runs **3:30**. Selecting it uses the included plot; the rest of the brief does not rewrite that plot.
 
 For a **different story**, omit “authored depression story” and “sample: depressed”. The local AI writer follows your brief. Example:
 
@@ -28,13 +28,13 @@ For a **different story**, omit “authored depression story” and “sample: d
 
 Use 4–8 clear chronological events with an obstacle, a choice and an ending. Include **she / female lead** or **he / male lead**. One adult protagonist appears throughout. The male lead is bald; the female lead has a dark bob hairstyle. They are original designs inspired by the broad expressive 2D format, without copied assets.
 
-## What changed in version 2
+## Current renderer
 
-- Rebuilt characters: rounded heads, thick articulated limbs, clothed bodies, shading, hands, shoes and a neck. The female has hair.
+- Rebuilt characters: rounded heads, thick articulated limbs, clothed bodies, shading, hands, shoes and clearly exposed, shaded necks. Heads pivot at the jaw rather than floating above the collar. The female has hair.
 - Larger expressive eyes, worried/sad/tired/determined expressions, pupils, blinks, tears, head tilts, breathing and gestures.
 - Bedroom, desk, street, park, gym and rooftop rebuilt with furniture, windows, plants, perspective, lighting and distinct night/dawn palettes.
 - Seated poses aligned to the bench; foreground desk occlusion; phone grips, thumb scrolling, writing hands, and alternating walk cycles.
-- Establishing, medium and close shots within every story beat. Phone and notebook inserts show typing, sending and writing. Captions remain sharp at output resolution.
+- Locked establishing and medium shots, with one deliberate cut per beat; no continuous zoom drift. Phone and notebook inserts show typing, sending and writing. Captions remain sharp at output resolution.
 - All drawing paths rasterized directly at **1920×1080**, rather than enlarging 540p frames. Playback defaults to **12 FPS**.
 - A complete authored depression story, plus a larger local **Qwen3-4B-Instruct-2507 Q4_K_M** writer for other stories. The writer sees the whole plot and writes three connected acts, retaining prior narration for continuity. Obvious action mismatches trigger a targeted repair; valid acts are checkpointed for local retries.
 - Twelve story beats, approximately 390–600 words. Production targets **210 seconds** with modest speech tempo correction, rather than repeating a short script or adding minutes of silence. Invalid lengths fail clearly.

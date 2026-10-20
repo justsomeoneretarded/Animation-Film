@@ -29,8 +29,8 @@ class PipelineTests(unittest.TestCase):
         self.assertEqual(p['target_seconds'],210)
         words=sum(len(s['narration'].split()) for s in p['scenes'])
         self.assertTrue(430<=words<=550)
-        self.assertIn('sent it',p['scenes'][9]['narration'])
-        self.assertIn('appointment',p['scenes'][10]['narration'])
+        self.assertIn('pressed send',p['scenes'][8]['narration'])
+        self.assertIn('clinic',p['scenes'][10]['narration'])
         female=depression_plan('Depressed','Female lead.')
         self.assertNotIn(' he ',' '.join(s['narration'] for s in female['scenes']))
         self.assertEqual(female['character'],'female')
@@ -87,6 +87,21 @@ class PipelineTests(unittest.TestCase):
             t=synthesize(template_plan('Title',BRIEF),Path(directory),'none',duration_scale=.25,fps=12)
             samples,sr=read_wave(Path(directory)/'soundtrack.wav')
             self.assertAlmostEqual(len(samples)/sr,sum(v['duration'] for v in t),places=4)
+    def test_neck_remains_visible_below_jaw(self):
+        from PIL import Image
+        for gender in ('male','female'):
+            for action,emotion in [('idle','neutral'),('phone','sad')]:
+                im=Image.new('RGBA',(1920,1080))
+                character(im,480,470,1,gender,action,emotion)
+                neck=im.crop((946,420,978,438))
+                pixels=list(neck.getdata())
+                skin=sum(r>150 and g>130 and b>90 and a==255 for r,g,b,a in pixels)
+                self.assertGreater(skin/len(pixels),.9)
+    def test_locked_camera_does_not_drift(self):
+        s=dict(location='desk',action='idle',emotion='neutral',time='day')
+        a=frame(s,'male','Title',1,18,0,12)
+        b=frame(s,'male','Title',4,18,0,12)
+        self.assertIsNone(ImageChops.difference(a.crop((20,70,550,260)),b.crop((20,70,550,260))).getbbox())
     def test_visual_continuity_rejects_impossible_contact(self):
         self.assertTrue(narration_issues('She sits without touching it, and she writes another line.',{'action':'walk'}))
         self.assertFalse(narration_issues('She walks slowly along the pavement, then pauses at the curb.',{'action':'walk'}))

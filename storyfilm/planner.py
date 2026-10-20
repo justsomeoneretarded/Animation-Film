@@ -103,7 +103,7 @@ def depression_plan(title,brief,character='auto'):
             s['narration']=re.sub(r'\bhis\b','her',s['narration'])
             s['narration']=re.sub(r'\bhimself\b','herself',s['narration'])
             s['narration']=re.sub(r'\bhim\b','her',s['narration'])
-    data.update(character=lead,target_seconds=210,writer='authored-depression-screenplay-v2')
+    data.update(character=lead,target_seconds=210,writer='authored-depression-screenplay-v3')
     return validate(data,title,brief,lead)
 
 
@@ -124,7 +124,7 @@ def ai_plan(title,brief,character='auto',model_id=MODEL_ID,diagnostics_path=None
     # project; explicit alternate plots use the general writer.
     if re.search(r'authored depression story|sample: depressed',brief,re.I):
         result=depression_plan(title,brief,character)
-        if diagnostics_path:Path(diagnostics_path).write_text('Selected authored-depression-screenplay-v2. Other briefs use the connected AI writer.\n')
+        if diagnostics_path:Path(diagnostics_path).write_text('Selected authored-depression-screenplay-v3. Other briefs use the connected AI writer.\n')
         print('Using the authored 3m30s depression screenplay. Brief selects the lead. Other briefs use the connected AI writer.',flush=True)
         return result
     import os,shutil,urllib.request
