@@ -1,46 +1,58 @@
 # Storyfilm
 
-Turn **a title and a story brief** into an original, narrated 2D short film with GitHub Actions. No API keys, paid inference service, GPU, or thumbnail generation.
+Make an original narrated **3–4 minute animated film at 1920×1080, 12 FPS**, using a title and brief in GitHub Actions. No API keys, paid model services, GPU or thumbnails.
 
-[View the two original characters](examples/characters.png) · [View a storyboard](examples/storyboard.jpg) · [Download the complete narrated sample](examples/sample.mp4)
+[Character designs](examples/characters.png) · [Storyboard](examples/storyboard.jpg) · [Watch the sample](examples/sample.mp4)
 
-The included sample was made from a title and brief using the AI planner, then compressed to 540p for repository size. The production workflow renders 1080p.
+## Make a film
 
-## Make your first film
+1. Open **Actions → Make a film → Run workflow** on `main`.
+2. Enter the title and brief.
+3. Download **film-N** from the completed run's **Artifacts**. Unzip and play `film.mp4`.
 
-1. Open this repository's **Actions** tab.
-2. Select **Make a film**, then **Run workflow** on `main`.
-3. Enter the **title** and **brief**, then run it.
-4. When it finishes, open the run and download **film-N** under **Artifacts**. Unzip it and play `film.mp4`.
+To render the fully authored sample, enter:
 
-Example title: **One Small Step**
+**Title:** `Depressed`
 
-Example brief:
-> A bald young woman feels stuck and spends her evenings scrolling in her bedroom. She puts her phone down and writes one tiny goal at her desk. The next morning she walks outside. She almost turns back, but sits in the park and notices how quiet her mind becomes. End on the rooftop at dawn: she has not fixed everything, but she chooses to try again tomorrow. Quiet, reflective, hopeful. Use the female lead.
+**Brief:**
+> Use the authored depression story. Male lead. A difficult night, an unfinished list, a short walk, a quiet park bench, and the decision to ask for support. A beginning rather than an instant recovery.
 
-Say **female lead / she** or **male lead / he** in the brief. One protagonist appears throughout a film. Both are bald adults, with subtle facial and silhouette differences. The optional glowing shadow symbolizes emotion; it is not a second human cast member.
+This exact phrase selects the included 495-word screenplay. Change **Male lead** to **Female lead** for the version with the female protagonist. This sample has a deliberate story arc and runs **3:30**. Selecting it uses the included plot; the rest of the brief does not rewrite that plot.
 
-The initial native build can take several minutes; GitHub caches the built wheel when available. A fresh runner downloads approximately 1.1 GB of story-model weights plus dependencies and a small speech model. Expect minutes to tens of minutes; runner speed and film length determine runtime. The job stops after 90 minutes. There are no persistent servers. Artifacts expire after seven days: download films you want to keep. Public standard runners are generally free under GitHub's applicable terms; private repositories have plan allowances. Do not enable paid runners for this workflow.
+For a **different story**, omit “authored depression story” and “sample: depressed”. The local AI writer follows your brief. Example:
 
-## What is included
+**Title:** `The Unfinished Page`
 
-- Local Qwen2.5-1.5B-Instruct-GGUF story planning through llama.cpp with official Q4_K_M weights and validated structured narration: ordered events from the brief become eight scenes, and the model writes their narration.
-- Two original procedural bald characters, male and female, selected once per film.
-- Bedroom, desk, street, park, gym and rooftop settings.
-- Idle, walk, sit, sleep, phone, write, exercise and reach poses, expressions and blinking.
-- Slow camera pushes, atmospheric particles, emotional shadow, fades and letterboxing.
-- Local Piper neural narration; an original generated ambient score and transition chimes.
-- Phrase captions burned into the film plus an SRT file.
-- 1920×1080, 24 fps, H.264/AAC MP4 with streaming-friendly metadata.
-- Editable `story.json`, storyboard, character sheet, narration and generation report.
+**Brief:**
+> Female lead. She sits at her desk, unable to finish a letter she has avoided for weeks. She crosses out the first sentence and puts the pen down. She walks along a quiet street, thinking about what she is afraid to admit. She sits on a park bench and opens the unfinished letter on her phone. Back at her desk, she writes a simpler, more honest version. End with her sending it, still uncertain about the answer. Quiet and specific, with a restrained hopeful ending.
 
-**Visual scope:** this is a stylized procedural animation engine, not a general AI video model. The artwork is intentionally simple and original. It does not reproduce the supplied films' exact designs or polish. Motion uses a reusable pose rig rather than hand-drawn frame-by-frame acting. The internal design canvas is 960×540, scaled to a 1080p output; increasing output resolution does not add drawn detail. No lip sync is included. Captions use estimated phrase timings. The scene planner anchors locations/actions to the brief’s ordered sentences, expanding short briefs to eight scenes. The story model is small and may write weak narration or return invalid JSON; Drawable scene fields come from the supported library. Validation requires exactly eight narration entries, and invalid model output gets one correction attempt. The model narrates each planned shot separately. llama.cpp’s JSON grammar enforces the response structure, and all narration entries are validated before rendering. If the correction still fails, the job fails clearly instead of silently pretending to be a generated story. Rerun or rewrite the brief if that happens.
+Use 4–8 clear chronological events with an obstacle, a choice and an ending. Include **she / female lead** or **he / male lead**. One adult protagonist appears throughout. The male lead is bald; the female lead has a dark bob hairstyle. They are original designs inspired by the broad expressive 2D format, without copied assets.
 
-For the most coherent results, describe a single protagonist, clear events, an obstacle and an ending. Keep physical actions within the included library. New settings/actions require adding artwork or rig code in `storyfilm/art.py`.
+## What changed in version 2
+
+- Rebuilt characters: rounded heads, thick articulated limbs, clothed bodies, shading, hands, shoes and a neck. The female has hair.
+- Larger expressive eyes, worried/sad/tired/determined expressions, pupils, blinks, tears, head tilts, breathing and gestures.
+- Bedroom, desk, street, park, gym and rooftop rebuilt with furniture, windows, plants, perspective, lighting and distinct night/dawn palettes.
+- Seated poses aligned to the bench; foreground desk occlusion; phone grips, thumb scrolling, writing hands, and planted walk cycles.
+- Establishing, medium and close shots within every story beat. Phone and notebook inserts show typing, sending and writing. Captions remain sharp at output resolution.
+- All drawing paths rasterized directly at **1920×1080**, rather than enlarging 540p frames. Playback defaults to **12 FPS**.
+- A complete authored depression story, plus a larger local **Qwen3-4B-Instruct-2507 Q4_K_M** writer for other stories. The writer sees the whole plot and writes three connected acts, retaining prior narration for continuity.
+- Twelve story beats, approximately 390–600 words. Production targets **210 seconds** with modest speech tempo correction, rather than repeating a short script or adding minutes of silence. Invalid lengths fail clearly.
+- Local Piper narration, original ambient score, footsteps, phone taps, pencil sounds, outdoor air and birds. No downloaded music.
+
+This remains a procedural 2D rig, with a defined drawing library. It does not produce arbitrary fully animated scenes or guarantee the polish of a hand-directed film. The supported actions are idle, walk, sit, sleep, phone, write, exercise and reach. Scripts should stay within these settings/actions; new artwork requires code. Narration is voice-over, with no lip sync. The small CPU story model can still write awkward prose; review the editable script and video before publishing. The authored sample gives a reliable quality reference.
+
+## Free execution and outputs
+
+The standard public Ubuntu runner uses CPU inference and rendering. No persistent server or paid service is required. GitHub's applicable free usage and storage limits still apply; private repositories have plan allowances. Do not enable paid runners for this workflow.
+
+The first native build takes several minutes. General AI stories download about 2.5 GB of model weights; the authored sample skips the language-model download. Both download a small speech model. Allow tens of minutes on a fresh runner. The job has a 90-minute timeout. Artifacts expire after seven days, so download films you want to keep.
+
+Outputs: `film.mp4`, editable `story.json`, `storyboard.jpg`, `characters.png`, `captions.srt`, `narration.wav` and `report.json`. Repository sample video is compressed to 540p for size; workflow output is native 1080p.
 
 ## Run locally
 
-Python 3.11 or 3.12 on Linux x86-64, FFmpeg and DejaVu Sans are recommended. On Ubuntu:
+Python 3.11/3.12, Linux x86-64 and FFmpeg:
 
 ```bash
 sudo apt-get update
@@ -49,29 +61,27 @@ python -m venv .venv
 source .venv/bin/activate
 python -m pip install -r requirements.txt
 CC=gcc CXX=g++ CMAKE_ARGS="-DGGML_NATIVE=OFF -DGGML_AVX2=ON -DGGML_FMA=ON -DGGML_F16C=ON -DLLAMA_CURL=OFF" CMAKE_BUILD_PARALLEL_LEVEL=2 python -m pip install -r requirements-ai.txt
-python -m storyfilm.render --title "One Small Step" --brief "A woman puts down her phone, writes one goal, and walks outside. She struggles but chooses to try again."
-python -m storyfilm.verify output/film.mp4
+python -m storyfilm.render --title "Depressed" --brief "Use the authored depression story. Male lead."
+python -m storyfilm.verify output/film.mp4 --height 1080 --fps 12 --min-seconds 180 --max-seconds 240
 ```
 
-Model downloads happen on first use. Subsequent local runs reuse `.cache/models` and `.cache/voices`. No secrets are required.
+Models are reused from `.cache`. The authored story does not require `requirements-ai.txt` for local rendering. `--character male` or `--character female` overrides selection.
 
-### Render an edited story
-
-Change the narration, locations, actions, emotions or shadow flags in a previous `story.json`, then:
+To edit a generated screenplay, change the narration, locations, actions, expressions, `time` (`night/dawn/day`), `shot` (`wide/close`) or `prop_text` in `story.json`, then:
 
 ```bash
-python -m storyfilm.render --title "Revised Film" --brief "Revised version of my original story." --plan output/story.json --out revised
+python -m storyfilm.render --title "Revised Film" --brief "My edited original story." --plan output/story.json --out revised
 ```
 
-Use `--character male` or `--character female` to override the selected lead locally.
+`target_seconds` must be 180–240 for production-length plans. The renderer fits narration to this duration with modest tempo correction. It rejects scripts that would require excessive acceleration or stretching. `prop_text` is optional text shown on a phone/notebook; `|` separates lines. The authors' sample includes actual notebook goals and the support message.
 
-### Lightweight, offline story planning
+For a short offline debugging preview:
 
 ```bash
-python -m storyfilm.render --title "A new day" --brief "She wakes up. She writes a goal. She walks outside. She decides to try again tomorrow." --planner template
+python -m storyfilm.render --title "A new day" --brief "She wakes up. She writes a goal. She walks outside. She decides to try again tomorrow." --planner template --voice none --preview --height 540 --fps 12
 ```
 
-The template planner reuses the brief's sentences as narration and maps keywords to actions. It is useful for debugging and explicit sentence-by-sentence stories, **not equivalent to AI screenwriting**. Piper still needs a one-time voice download. For fully offline checks after installing basic dependencies, use `--planner template --voice none --preview --height 540 --fps 12`; this makes a short preview with score but no speech. `--voice espeak` is also supported if you install `espeak-ng`, with less natural speech. The production Actions workflow uses AI plus Piper and never silently falls back.
+The explicit template path preserves brief sentences. It is a debugging tool, not the production writer, and is not required to last three minutes. `--preview` omits voice and shortens timings. `--voice espeak` is available with `espeak-ng`, with less natural speech. The default workflow uses Piper, never a silent fallback.
 
 ## Development
 
@@ -79,6 +89,6 @@ The template planner reuses the brief's sentences as narration and maps keywords
 python -m unittest discover -s tests -v
 ```
 
-`Check renderer` runs tests plus a small FFmpeg integration render on each push. `Full AI film acceptance` tests the complete default pipeline with a sample female-led brief when that acceptance workflow is changed, or when manually requested. `Make a film` runs only when manually requested. Title and brief enter through environment variables, never interpolated into shell commands; all external commands use argument arrays. Brief content is story data, not code. The workflow has read-only repository permissions.
+Tests cover script length and continuity landmarks, lead selection, data-only inputs, native resolution, all rig actions, expression/movement differences, day/night backgrounds, object inserts, 12 FPS timing and captions. CI also renders and decodes a short MP4. Full acceptance renders and verifies the 3:30 sample at 1080p12. Workflow inputs pass through environment variables; commands use argument arrays. Repository permissions are read-only.
 
-Project layout: `planner.py` handles story generation and schema validation; `art.py` draws the assets; `audio.py` synthesizes speech and sound; `render.py` orchestrates and encodes; `verify.py` validates the finished media. See `THIRD_PARTY.md` for model/software licenses.
+`planner.py`: screenplay and validation. `stories/depressed.json`: authored sample. `art.py`: original artwork and acting. `audio.py`: speech, timing and sound. `render.py`: orchestration and encoding. `verify.py`: dimensions, frame rate, duration, streams and complete decoding. See [THIRD_PARTY.md](THIRD_PARTY.md) for component licenses.

@@ -2,9 +2,10 @@ import json
 import tempfile
 import unittest
 from pathlib import Path
-from storyfilm.planner import template_plan, validate, brief_outline, validate_narrations, ACTIONS, LOCATIONS
-from storyfilm.render import captions, timestamp
-from storyfilm.art import frame
+from PIL import ImageChops,ImageStat
+from storyfilm.planner import template_plan,validate,brief_outline,validate_narrations,depression_plan,BEATS,ACTIONS
+from storyfilm.render import captions,timestamp
+from storyfilm.art import frame,character,background
 from storyfilm.audio import synthesize,read_wave
 BRIEF='She wakes up feeling stuck. She writes down her goal. She walks outside. She finally feels hopeful.'
 class PipelineTests(unittest.TestCase):
@@ -15,62 +16,76 @@ class PipelineTests(unittest.TestCase):
         p=template_plan('Title `uname`','She writes $(touch /tmp/never-create-this); then walks outside. She smiles. She rests.')
         self.assertIn('$(touch',p['scenes'][0]['narration'])
         self.assertEqual(p['title'],'Title `uname`')
-    def test_outline_preserves_brief_actions_and_ending(self):
+    def test_ordered_outline(self):
         brief='She scrolls in her bedroom. She writes a goal at her desk. She walks outside. She sits in the park. End on the rooftop with her trying again tomorrow. Reflective, quiet, hopeful. Female lead.'
         lead,scenes=brief_outline(brief)
-        self.assertEqual(lead,'female')
-        self.assertEqual(len(scenes),8)
+        self.assertEqual(lead,'female');self.assertEqual(len(scenes),BEATS)
         self.assertEqual((scenes[0]['location'],scenes[0]['action']),('bedroom','phone'))
         self.assertEqual(scenes[-1]['location'],'rooftop')
         self.assertIn('trying again tomorrow',scenes[-1]['narration'])
         self.assertTrue(any(s['action']=='write' and s['location']=='desk' for s in scenes))
-        self.assertTrue(any(s['action']=='sit' and s['location']=='park' for s in scenes))
-        for scene in scenes:
-            self.assertIn(scene['location'],LOCATIONS)
-            self.assertIn(scene['action'],ACTIONS)
-    def test_rejects_scene_metadata_as_narration(self):
-        values={f'scene_{i+1}':'She takes one small step and chooses to try again tomorrow.' for i in range(8)}
+    def test_authored_script_continuity_and_length(self):
+        p=depression_plan('Depressed','Male lead.')
+        self.assertEqual(p['target_seconds'],210)
+        words=sum(len(s['narration'].split()) for s in p['scenes'])
+        self.assertTrue(430<=words<=550)
+        self.assertIn('sent it',p['scenes'][9]['narration'])
+        self.assertIn('appointment',p['scenes'][10]['narration'])
+        female=depression_plan('Depressed','Female lead.')
+        self.assertNotIn(' he ',' '.join(s['narration'] for s in female['scenes']))
+        self.assertEqual(female['character'],'female')
+    def test_rejects_scene_metadata(self):
+        values={f'scene_{i+1}':'She takes one small step and chooses to try again tomorrow.' for i in range(BEATS)}
         self.assertEqual(validate_narrations(values),values)
         values['scene_1']='scene_1 is a fictional character who appears in the story.'
         with self.assertRaises(ValueError):validate_narrations(values)
-        with self.assertRaises(ValueError):validate_narrations({'scene_1':'A brief narration.'})
-    def test_invalid_model_output(self):
-        plan=template_plan('A new day',BRIEF);plan['scenes'][1]['location']='castle'
-        with self.assertRaises(ValueError): validate(plan,'Title',BRIEF)
-        with self.assertRaises(ValueError): validate({'scenes':[]},'Title',BRIEF)
-    def test_actions_and_leads_render(self):
+    def test_invalid_plan(self):
+        p=template_plan('Title',BRIEF);p['scenes'][1]['location']='castle'
+        with self.assertRaises(ValueError):validate(p,'Title',BRIEF)
+        with self.assertRaises(ValueError):validate({'scenes':[]},'Title',BRIEF)
+        p=depression_plan('Depressed','Male lead.');p['target_seconds']=60
+        with self.assertRaises(ValueError):validate(p,'Title',BRIEF)
+    def test_all_actions_native_resolution(self):
         for gender in ('female','male'):
-            for action in ACTIONS:
-                for location in LOCATIONS:
-                    scene=dict(location=location,action=action,emotion='worried',shadow=True)
-                    image=frame(scene,gender,'A new day',1.2,5,0,4,'A small beginning.')
-                    self.assertEqual(image.size,(960,540))
-                    self.assertGreater(sum(image.getextrema()[0]),10)
-    def test_caption_timing_and_audio(self):
-        plan=template_plan('A new day',BRIEF)
+            for i,action in enumerate(sorted(ACTIONS)):
+                s=dict(location=['bedroom','desk','street','park','gym','rooftop'][i%6],action=action,emotion='worried',shadow=False)
+                im=frame(s,gender,'Title',2,8,0,12,'A small beginning.')
+                self.assertEqual(im.size,(1920,1080))
+                self.assertGreater(ImageStat.Stat(im).stddev[0],15)
+    def test_expression_and_motion_are_visible(self):
+        s=dict(location='park',action='sit',emotion='sad',shadow=False)
+        a=frame(s,'male','Title',4,12,0,12)
+        b=frame(dict(s,emotion='happy'),'male','Title',4,12,0,12)
+        self.assertGreater(sum(ImageStat.Stat(ImageChops.difference(a,b)).mean),.5)
+        # Keep the camera and scene fixed: rig itself must move.
+        from PIL import Image
+        a=Image.new('RGBA',(1920,1080));b=a.copy()
+        character(a,480,470,0,'female','walk','worried')
+        character(b,480,470,.4,'female','walk','worried')
+        self.assertGreater(sum(ImageStat.Stat(ImageChops.difference(a,b)).mean),1)
+    def test_day_and_night_are_distinct(self):
+        self.assertGreater(sum(ImageStat.Stat(ImageChops.difference(background('park','night'),background('park','dawn'))).mean),20)
+    def test_object_inserts_render(self):
+        for action in ('phone','write'):
+            s=dict(location='desk',action=action,emotion='worried',prop_text='Ask for help.|One step.',shadow=False)
+            im=frame(s,'female','Title',10,12,2,12)
+            self.assertEqual(im.size,(1920,1080))
+    def test_production_timing_and_captions(self):
+        plan=depression_plan('Depressed','Male lead.')
         with tempfile.TemporaryDirectory() as directory:
-            timings=synthesize(plan,Path(directory),'none')
+            t=synthesize(plan,Path(directory),'none',fps=12)
             samples,sr=read_wave(Path(directory)/'soundtrack.wav')
-            self.assertGreater(float(abs(samples).max()),.001)
-            self.assertAlmostEqual(len(samples)/sr,sum(t['duration'] for t in timings),places=3)
-            caps=captions(plan,timings)
-            self.assertTrue(all(a<b for a,b,_ in caps))
+            self.assertAlmostEqual(sum(v['duration'] for v in t),210,places=5)
+            self.assertAlmostEqual(len(samples)/sr,210,places=5)
+            self.assertGreater(float(abs(samples).max()),.01)
+            self.assertTrue(all(abs(v['duration']*12-round(v['duration']*12))<1e-6 for v in t))
+            caps=captions(plan,t)
+            self.assertTrue(all(a<b for a,b,_ in caps));self.assertLessEqual(caps[-1][1],210)
             self.assertTrue(all(caps[i][1]<=caps[i+1][0] for i in range(len(caps)-1)))
-    def test_audio_scene_lengths_match_frame_boundaries(self):
-        plan=template_plan('A new day',BRIEF)
+    def test_preview_audio_lengths(self):
         with tempfile.TemporaryDirectory() as directory:
-            timings=synthesize(plan,Path(directory),'none',duration_scale=.25,fps=12)
-            for timing in timings:
-                self.assertAlmostEqual(timing['duration']*12,round(timing['duration']*12),places=7)
+            t=synthesize(template_plan('Title',BRIEF),Path(directory),'none',duration_scale=.25,fps=12)
             samples,sr=read_wave(Path(directory)/'soundtrack.wav')
-            self.assertAlmostEqual(len(samples)/sr,sum(t['duration'] for t in timings),places=4)
-            caps=captions(plan,timings)
-            self.assertTrue(all(a<b for a,b,_ in caps))
-            self.assertLessEqual(caps[-1][1],sum(t['duration'] for t in timings))
-    def test_timestamp_rounding(self):
-        self.assertEqual(timestamp(59.9999),'00:01:00,000')
-    def test_one_lead(self):
-        p=template_plan('A new day',BRIEF)
-        self.assertNotIn('characters',p)
-        self.assertTrue(all('character' not in scene for scene in p['scenes']))
-if __name__=='__main__': unittest.main()
+            self.assertAlmostEqual(len(samples)/sr,sum(v['duration'] for v in t),places=4)
+    def test_timestamp_rounding(self):self.assertEqual(timestamp(59.9999),'00:01:00,000')
+if __name__=='__main__':unittest.main()

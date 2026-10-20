@@ -40,7 +40,7 @@ def write_wave(path, samples, sr=24000):
         w.writeframes((np.clip(samples, -.98, .98)*32767).astype('<i2').tobytes())
 
 
-def synthesize(plan, out, engine='piper', cache='.cache/voices', duration_scale=1., fps=24):
+def synthesize(plan, out, engine='piper', cache='.cache/voices', duration_scale=1., fps=12):
     out=Path(out)
     voice=None
     if engine=='piper':
@@ -49,12 +49,12 @@ def synthesize(plan, out, engine='piper', cache='.cache/voices', duration_scale=
     elif engine=='espeak' and not (shutil.which('espeak-ng') or shutil.which('espeak')):
         raise RuntimeError('Install espeak-ng or use --voice piper')
     sr=24000
-    all_audio=[]; timings=[]; cursor=0
+    all_audio=[]; timings=[]; cursor=0; prepared=[]
     for i, scene in enumerate(plan['scenes']):
         dest=out/f'narration-{i:02d}.wav'
         if engine=='piper':
             with wave.open(str(dest),'wb') as wav:
-                voice.synthesize_wav(scene['narration'],wav,syn_config=SynthesisConfig(length_scale=1.06))
+                voice.synthesize_wav(scene['narration'],wav,syn_config=SynthesisConfig(length_scale=1.12))
             samples, rate=read_wave(dest)
         elif engine=='espeak':
             subprocess.run([shutil.which('espeak-ng') or shutil.which('espeak'), '-s','145','-v','en-us','-w',str(dest),'--',scene['narration']],check=True)
@@ -64,17 +64,48 @@ def synthesize(plan, out, engine='piper', cache='.cache/voices', duration_scale=
             samples=np.zeros(int(sr*max(3,len(scene['narration'].split())/2.4)),np.float32)
         if rate != sr:
             samples=np.interp(np.arange(round(len(samples)*sr/rate))*rate/sr,np.arange(len(samples)),samples).astype(np.float32)
-        lead=int(.65*sr); tail=int(.9*sr)
-        duration=round(max(5,(len(samples)+lead+tail)/sr)*duration_scale*fps)/fps
-        # Preview scaling deliberately shortens scenes and omits the cut-off narration.
+        prepared.append(samples)
+        print(f'Speech ready: beat {i+1}/{len(plan["scenes"])}',flush=True)
+    target=plan.get('target_seconds')
+    if target:
+        # Preserve the spoken performance; only modest tempo changes are allowed.
+        # A short script must be rewritten, not stretched into minutes of silence.
+        speech_seconds=sum(len(a)/sr for a in prepared)
+        body=target-len(prepared)*1.55
+        tempo=speech_seconds/body
+        if engine!='none' and not .72<=tempo<=1.45:
+            raise ValueError(f'Script timing cannot fit 3–4 minutes naturally (tempo {tempo:.2f}); rewrite the script')
+        if engine=='none':
+            prepared=[np.zeros(round(len(a)/tempo),np.float32) for a in prepared]
+        if engine!='none' and abs(tempo-1)>.015:
+            for i,samples in enumerate(prepared):
+                temp=out/f'tempo-{i:02d}.wav';write_wave(temp,samples,sr)
+                dest=out/f'retimed-{i:02d}.wav'
+                subprocess.run(['ffmpeg','-v','error','-y','-i',str(temp),'-af',f'atempo={tempo:.6f}',str(dest)],check=True)
+                prepared[i],_=read_wave(dest);temp.unlink();dest.unlink()
+    total_speech=sum(len(a) for a in prepared)
+    target_frames=round(target*fps) if target else None
+    used_frames=0
+    for i,(scene,samples) in enumerate(zip(plan['scenes'],prepared)):
+        lead=int(.65*sr)
+        if target:
+            # Allocate pauses proportionally; final frame absorbs rounding.
+            remaining=max(0,target-total_speech/sr)
+            duration=(len(samples)/sr+remaining/len(prepared))*duration_scale
+        else:duration=max(5,len(samples)/sr+1.55)*duration_scale
+        frames=max(1,round(duration*fps))
+        if target and i==len(prepared)-1:
+            frames=round(target_frames*duration_scale)-used_frames
+        used_frames+=frames;duration=frames/fps
         sound=np.zeros(round(duration*sr),np.float32)
         if duration_scale==1:
-            sound[lead:lead+len(samples)]=samples[:max(0,len(sound)-lead)]
+            available=len(sound)-lead
+            if len(samples)>available:raise ValueError('Speech does not fit allocated beat')
+            sound[lead:lead+len(samples)]=samples
         all_audio.append(sound)
         timings.append({'start':cursor,'duration':duration,'speech_start':cursor+.65,
                         'speech_duration':len(samples)/sr,'scene':i})
         cursor+=duration
-        print(f'Narration ready: scene {i+1}/{len(plan["scenes"])}',flush=True)
     narration=np.concatenate(all_audio)
     # Original restrained ambient score: slowly moving sine chords, no downloaded music.
     mix=narration*.84
@@ -91,11 +122,29 @@ def synthesize(plan, out, engine='piper', cache='.cache/voices', duration_scale=
         # Duck the score under narration, using a smooth block envelope.
         energy=float(np.sqrt(np.mean(narration[start:stop]**2)))
         mix[start:stop]+=pad*(.5 if energy>.015 else 1)
-    # Soft transition chimes act as restrained sound effects.
-    for timing in timings[1:]:
-        start=round(timing['start']*sr); length=min(sr,len(mix)-start)
-        tt=np.arange(length)/sr
-        mix[start:start+length]+=.017*np.sin(2*np.pi*523.25*tt)*np.exp(-tt*7)
+    # Deterministic scene foley: feet, pencil, phone taps, outdoor air and birds.
+    rng=np.random.default_rng(42)
+    for scene,timing in zip(plan['scenes'],timings):
+        offset=round(timing['start']*sr);length=round(timing['duration']*sr)
+        end=min(len(mix),offset+length);length=end-offset
+        if scene['location'] in {'street','park','rooftop'}:
+            noise=rng.normal(0,1,length)
+            air=np.convolve(noise,np.ones(90)/90,mode='same')*.014
+            mix[offset:end]+=air
+        action=scene['action']
+        step=.87 if action=='walk' else 1.3 if action=='write' else 3.1
+        if action in {'walk','write','phone'}:
+            for when in np.arange(1,timing['duration']-.4,step):
+                start=offset+round(when*sr);n=min(round(sr*.13),len(mix)-start)
+                tt=np.arange(n)/sr
+                if action=='walk':sound=(rng.normal(0,1,n)*.022+np.sin(2*np.pi*91*tt)*.04)*np.exp(-tt*38)
+                elif action=='write':sound=rng.normal(0,1,n)*.008*np.sin(np.pi*np.arange(n)/max(1,n))
+                else:sound=np.sin(2*np.pi*740*tt)*.009*np.exp(-tt*65)
+                mix[start:start+n]+=sound
+        if scene['location']=='park' and scene.get('time')!='night':
+            for when in np.arange(2,timing['duration']-1,6):
+                start=offset+round(when*sr);n=min(round(.3*sr),len(mix)-start);tt=np.arange(n)/sr
+                mix[start:start+n]+=.009*np.sin(2*np.pi*(1700*tt+900*tt**2))*np.sin(np.pi*np.arange(n)/max(1,n))**2
     ramp=min(sr*2,len(mix)//2)
     mix[:ramp]*=np.linspace(0,1,ramp);mix[-ramp:]*=np.linspace(1,0,ramp)
     write_wave(out/'soundtrack.wav',mix,sr)

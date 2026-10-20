@@ -5,9 +5,9 @@ import shutil
 import subprocess
 from pathlib import Path
 from PIL import Image, ImageDraw
-from .planner import ai_plan, template_plan, validate
+from .planner import ai_plan, template_plan, validate, MODEL_ID
 from .audio import synthesize
-from .art import frame, character, font, wrapped
+from .art import frame, character, font, wrapped, W, H
 
 
 def timestamp(seconds):
@@ -46,23 +46,23 @@ def storyboard(plan,out):
 
 
 def character_sheet(out):
-    im=Image.new('RGBA',(960,540),'#161c29')
+    im=Image.new('RGBA',(W,H),'#243344')
     d=ImageDraw.Draw(im)
-    d.text((43,33),'STORYFILM / ORIGINAL REUSABLE LEADS',font=font(22),fill='#e8e4dc')
-    character(im,280,435,1,'female','idle','neutral',1.05)
-    character(im,680,435,1,'male','idle','neutral',1.05)
-    d.text((215,470),'FEMALE LEAD',font=font(18),fill='#d0d7e4')
-    d.text((627,470),'MALE LEAD',font=font(18),fill='#d0d7e4')
+    d.text((86,66),'STORYFILM / ORIGINAL REUSABLE LEADS',font=font(44),fill='#e8e4dc')
+    character(im,280,461,1,'female','idle','neutral',.94)
+    character(im,680,461,1,'male','idle','neutral',.94)
+    d.text((420,974),'FEMALE LEAD',font=font(36),fill='#d0d7e4')
+    d.text((1254,974),'MALE LEAD',font=font(36),fill='#d0d7e4')
     im.convert('RGB').save(out/'characters.png')
 
 
-def render_video(plan,timings,out,fps=24,height=1080):
+def render_video(plan,timings,out,fps=12,height=1080):
     entries=captions(plan,timings)
     (out/'captions.srt').write_text('\n\n'.join(f'{i+1}\n{timestamp(a)} --> {timestamp(b)}\n{text}' for i,(a,b,text) in enumerate(entries))+'\n')
     width=height*16//9
     # Frame counts are rounded individually, then timings are adjusted before audio muxing.
     video=out/'film.mp4'
-    command=['ffmpeg','-v','error','-y','-f','rawvideo','-pix_fmt','rgb24','-s','960x540','-r',str(fps),
+    command=['ffmpeg','-v','error','-y','-f','rawvideo','-pix_fmt','rgb24','-s',f'{W}x{H}','-r',str(fps),
              '-i','pipe:0','-i',str(out/'soundtrack.wav'),'-map','0:v:0','-map','1:a:0',
              '-vf',f'scale={width}:{height}:flags=lanczos','-c:v','libx264','-preset','fast',
              '-crf','20','-pix_fmt','yuv420p','-c:a','aac','-b:a','160k','-shortest','-movflags','+faststart',str(video)]
@@ -92,12 +92,12 @@ def main():
     p.add_argument('--brief',default=os.getenv('FILM_BRIEF'))
     p.add_argument('--character',choices=['auto','male','female'],default='auto')
     p.add_argument('--planner',choices=['ai','template'],default='ai')
-    p.add_argument('--model',default='Qwen/Qwen2.5-1.5B-Instruct-GGUF')
+    p.add_argument('--model',default=MODEL_ID)
     p.add_argument('--voice',choices=['piper','espeak','none'],default='piper')
     p.add_argument('--plan',type=Path,help='Render a previously saved story.json instead of planning again')
     p.add_argument('--out',type=Path,default=Path('output'))
     p.add_argument('--height',type=int,choices=[540,720,1080],default=1080)
-    p.add_argument('--fps',type=int,choices=[12,24,30],default=24)
+    p.add_argument('--fps',type=int,choices=[12,24,30],default=12)
     p.add_argument('--preview',action='store_true',help='Short silent preview; cuts scene durations to 25 percent')
     p.add_argument('--allow-template-fallback',action='store_true',help='Explicitly permit basic offline planning if AI fails')
     args=p.parse_args()
@@ -136,7 +136,8 @@ def main():
     report={'planner':source,'model':args.model if source=='ai' else None,'voice':args.voice,
             'preview':args.preview,'character':plan['character'],'duration_seconds':cursor,
             'resolution':f'{args.height*16//9}x{args.height}','fps':args.fps,'timings':timings,
-            'artwork':'Original procedural 2D artwork; not extracted from the references.',
+            'artwork':'Original rounded vector artwork rasterized at native 1920x1080.',
+            'writer':plan.get('writer',source),'target_seconds':plan.get('target_seconds'),
             'captions':'Phrase timing estimated from narration duration, not forced alignment.'}
     (args.out/'report.json').write_text(json.dumps(report,indent=2))
     print(f'Finished: {video}',flush=True)

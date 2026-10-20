@@ -1,0 +1,117 @@
+{
+  "scenes": [
+    {
+      "location": "bedroom",
+      "action": "phone",
+      "emotion": "tired",
+      "time": "night",
+      "shot": "wide",
+      "event": "Awake at 2:17, scrolling without interest.",
+      "narration": "At two seventeen, he was still awake. His thumb kept moving, although nothing on the screen interested him anymore. He had been waiting to feel tired enough to sleep. Somehow, he was exhausted and wide awake at the same time.",
+      "prop_text": ""
+    },
+    {
+      "location": "bedroom",
+      "action": "sit",
+      "emotion": "sad",
+      "time": "night",
+      "shot": "close",
+      "event": "The phone lowers. He cannot make himself begin the day.",
+      "narration": "The room was not a disaster. That almost made it harder to explain. There were things he could do, small ordinary things. Answer a message. Wash a cup. Each one seemed to require something he could no longer find."
+    },
+    {
+      "location": "desk",
+      "action": "write",
+      "emotion": "tired",
+      "time": "night",
+      "shot": "wide",
+      "event": "He attempts a long to-do list, but stops writing.",
+      "narration": "At his desk, he tried the thing that usually helped: a list. He wrote the first line, then held the pen above the second. The page stayed mostly empty. He stared at it until it began to feel like evidence against him.",
+      "prop_text": "Things I should do"
+    },
+    {
+      "location": "desk",
+      "action": "idle",
+      "emotion": "sad",
+      "time": "night",
+      "shot": "close",
+      "event": "He pauses at the desk and admits he is struggling.",
+      "narration": "He had called himself lazy so often that the word arrived before any other thought. But he missed wanting things. He missed laughing without having to prepare for it. This was not a life he had chosen because it was easy."
+    },
+    {
+      "location": "desk",
+      "action": "write",
+      "emotion": "worried",
+      "time": "dawn",
+      "shot": "wide",
+      "event": "He writes a smaller goal: go outside, with permission to come back.",
+      "narration": "When the window began to lighten, he turned to a clean page. This time, he wrote only two words: go outside. Underneath, he added a condition. He was allowed to come straight back. The promise felt small enough to believe.",
+      "prop_text": "GO OUTSIDE|I can come back."
+    },
+    {
+      "location": "street",
+      "action": "idle",
+      "emotion": "worried",
+      "time": "dawn",
+      "shot": "close",
+      "event": "Outside, he hesitates, shoulders tense, considering turning back.",
+      "narration": "Outside, he stopped almost immediately. The air was colder than he expected, and the street seemed strangely far from his room. Part of him wanted to turn around before this became another thing he had tried and failed to do."
+    },
+    {
+      "location": "street",
+      "action": "walk",
+      "emotion": "tired",
+      "time": "dawn",
+      "shot": "wide",
+      "event": "He walks slowly toward the park, without an instant change in mood.",
+      "narration": "He did not suddenly feel better. He walked past one doorway, then another, watching his shoes meet the pavement. He wasn't trying to become a different person before breakfast. For now, he was only walking to the end of the street."
+    },
+    {
+      "location": "park",
+      "action": "sit",
+      "emotion": "sad",
+      "time": "dawn",
+      "shot": "wide",
+      "event": "He sits on a bench and lets the effort show.",
+      "narration": "At the park, he sat down. His chest still felt heavy. For a moment, he was disappointed; some quiet part of him had hoped the walk would fix more than a walk could fix. He let his hands rest on his knees."
+    },
+    {
+      "location": "park",
+      "action": "sit",
+      "emotion": "neutral",
+      "time": "day",
+      "shot": "close",
+      "event": "He notices the bench, wind and breathing, without forcing happiness.",
+      "narration": "The bench was cool through his clothes. A leaf scraped across the path, caught, and moved again. He noticed his breathing without trying to improve it. Nothing remarkable happened. But for a little while, he stopped measuring whether he was doing enough."
+    },
+    {
+      "location": "park",
+      "action": "phone",
+      "emotion": "worried",
+      "time": "day",
+      "shot": "wide",
+      "event": "He opens a message and finally asks for support.",
+      "narration": "When he took out his phone, he opened a message instead of the feed. He typed that he had been struggling, and that he didn't want to keep pretending otherwise. His thumb hovered for a long time. Then he sent it.",
+      "prop_text": "I haven't been doing well.|Could we talk?"
+    },
+    {
+      "location": "desk",
+      "action": "write",
+      "emotion": "neutral",
+      "time": "day",
+      "shot": "wide",
+      "event": "Back home he writes a practical next step: arrange professional support.",
+      "narration": "Back home, the unfinished list was exactly where he had left it. He did not fill the page. Beneath the two words, he wrote a different next step: arrange an appointment. He could ask for help before he knew how to explain everything.",
+      "prop_text": "Arrange an appointment."
+    },
+    {
+      "location": "rooftop",
+      "action": "idle",
+      "emotion": "neutral",
+      "time": "day",
+      "shot": "close",
+      "event": "A quiet ending. The struggle remains, but it no longer has to stay hidden.",
+      "narration": "Later, above the waking city, he stood without asking himself to feel grateful or strong. Tomorrow might still be difficult. He had not solved his life in a morning. But someone knew he was struggling now. He wouldn't have to hide all of it."
+    }
+  ]
+}

@@ -11,5 +11,5 @@ jobs:
   example:
     uses: ./.github/workflows/make-film.yml
     with:
-      title: One Small Step
-      brief: A bald young woman spends her evenings scrolling alone in her bedroom. She puts her phone down and writes one tiny goal at her desk. The next morning she walks outside. She almost turns back, but sits quietly in the park. End on the rooftop with her choosing to try again tomorrow. Reflective, quiet, hopeful. Female lead. One visible protagonist throughout.
+      title: Depressed
+      brief: Use the authored depression story. Male lead. A difficult night, an unfinished list, a short walk, a quiet park bench, and the decision to ask for support. A beginning rather than an instant recovery.
