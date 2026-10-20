@@ -2,7 +2,7 @@ import json
 import tempfile
 import unittest
 from pathlib import Path
-from storyfilm.planner import template_plan, validate, adapt_model_plan, story_schema, brief_outline, narration_schema, ACTIONS, LOCATIONS
+from storyfilm.planner import template_plan, validate, brief_outline, validate_narrations, ACTIONS, LOCATIONS
 from storyfilm.render import captions, timestamp
 from storyfilm.art import frame
 from storyfilm.audio import synthesize,read_wave
@@ -15,39 +15,6 @@ class PipelineTests(unittest.TestCase):
         p=template_plan('Title `uname`','She writes $(touch /tmp/never-create-this); then walks outside. She smiles. She rests.')
         self.assertIn('$(touch',p['scenes'][0]['narration'])
         self.assertEqual(p['title'],'Title `uname`')
-    def test_generation_grammar_rejects_unsupported_emotions(self):
-        try:
-            from lmformatenforcer import JsonSchemaParser
-        except ImportError:
-            self.skipTest('AI dependencies are not installed')
-        plan=template_plan('A new day',BRIEF)
-        plan['scenes']*=2
-        text=json.dumps({'character':plan['character'],'scenes':plan['scenes']})
-        parser=JsonSchemaParser(story_schema())
-        for char in text:
-            self.assertIn(char,parser.get_allowed_characters())
-            parser=parser.add_character(char)
-        self.assertTrue(parser.can_end())
-        invalid=text.replace('"sad"','"worrying"',1)
-        parser=JsonSchemaParser(story_schema())
-        rejected=False
-        for char in invalid:
-            if char not in parser.get_allowed_characters():
-                rejected=True
-                break
-            parser=parser.add_character(char)
-        self.assertTrue(rejected)
-    def test_model_synonyms_preserve_the_story(self):
-        plan=template_plan('A new day',BRIEF)
-        narration=plan['scenes'][0]['narration']
-        plan['scenes'][0]['emotion']='reflective'
-        plan['scenes'][1]['emotion']='hopeful'
-        mapped,changes=adapt_model_plan(plan)
-        result=validate(mapped,'A new day',BRIEF)
-        self.assertEqual(result['scenes'][0]['emotion'],'neutral')
-        self.assertEqual(result['scenes'][1]['emotion'],'happy')
-        self.assertEqual(result['scenes'][0]['narration'],narration)
-        self.assertEqual(len(changes),2)
     def test_outline_preserves_brief_actions_and_ending(self):
         brief='She scrolls in her bedroom. She writes a goal at her desk. She walks outside. She sits in the park. End on the rooftop with her trying again tomorrow. Reflective, quiet, hopeful. Female lead.'
         lead,scenes=brief_outline(brief)
@@ -61,17 +28,12 @@ class PipelineTests(unittest.TestCase):
         for scene in scenes:
             self.assertIn(scene['location'],LOCATIONS)
             self.assertIn(scene['action'],ACTIONS)
-    def test_narration_grammar_accepts_all_eight_scenes(self):
-        try:
-            from lmformatenforcer import JsonSchemaParser
-        except ImportError:
-            self.skipTest('AI dependencies are not installed')
-        parser=JsonSchemaParser(narration_schema())
-        value={f'scene_{i+1}':'She makes one small choice and tries again tomorrow.' for i in range(8)}
-        for char in json.dumps(value):
-            self.assertIn(char,parser.get_allowed_characters())
-            parser=parser.add_character(char)
-        self.assertTrue(parser.can_end())
+    def test_rejects_scene_metadata_as_narration(self):
+        values={f'scene_{i+1}':'She takes one small step and chooses to try again tomorrow.' for i in range(8)}
+        self.assertEqual(validate_narrations(values),values)
+        values['scene_1']='scene_1 is a fictional character who appears in the story.'
+        with self.assertRaises(ValueError):validate_narrations(values)
+        with self.assertRaises(ValueError):validate_narrations({'scene_1':'A brief narration.'})
     def test_invalid_model_output(self):
         plan=template_plan('A new day',BRIEF);plan['scenes'][1]['location']='castle'
         with self.assertRaises(ValueError): validate(plan,'Title',BRIEF)

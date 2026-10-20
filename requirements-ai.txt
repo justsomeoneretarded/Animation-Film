@@ -1,4 +1,1 @@
-transformers==4.57.6
-accelerate==1.12.0
-safetensors==0.7.0
-lm-format-enforcer==0.11.3
+llama-cpp-python @ https://files.pythonhosted.org/packages/d7/0f/b26ceec20294f5d592ac137ccc2f10e91fa1f35bb8555906b5718a625ac1/llama_cpp_python-0.3.19.tar.gz

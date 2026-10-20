@@ -31,6 +31,10 @@ jobs:
       HF_HUB_DISABLE_TELEMETRY: '1'
       TOKENIZERS_PARALLELISM: 'false'
       OMP_NUM_THREADS: '4'
+      CMAKE_ARGS: '-DGGML_NATIVE=OFF -DGGML_AVX2=ON -DGGML_FMA=ON -DGGML_F16C=ON -DLLAMA_CURL=OFF'
+      CMAKE_BUILD_PARALLEL_LEVEL: '2'
+      CC: gcc
+      CXX: g++
     steps:
       - uses: actions/checkout@v4
       - uses: actions/setup-python@v5
@@ -43,11 +47,10 @@ jobs:
       - name: Install system tools
         run: |
           sudo apt-get update -qq
-          sudo apt-get install -y ffmpeg fonts-dejavu-core
+          sudo apt-get install -y ffmpeg fonts-dejavu-core build-essential cmake
       - name: Install local speech and story tools
         run: |
           python -m pip install -r requirements.txt
-          python -m pip install torch==2.6.0 --index-url https://download.pytorch.org/whl/cpu
           python -m pip install -r requirements-ai.txt
       - name: Test renderer and input handling
         run: python -m unittest discover -s tests -v

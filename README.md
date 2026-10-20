@@ -20,11 +20,11 @@ Example brief:
 
 Say **female lead / she** or **male lead / he** in the brief. One protagonist appears throughout a film. Both are bald adults, with subtle facial and silhouette differences. The optional glowing shadow symbolizes emotion; it is not a second human cast member.
 
-A first run downloads approximately 3 GB of story-model weights plus dependencies and a small speech model. Expect minutes to tens of minutes; runner speed and film length determine runtime. The job stops after 90 minutes. There are no persistent servers. Artifacts expire after seven days: download films you want to keep. Public standard runners are generally free under GitHub's applicable terms; private repositories have plan allowances. Do not enable paid runners for this workflow.
+The initial native build can take several minutes; GitHub caches the built wheel when available. A fresh runner downloads approximately 1.1 GB of story-model weights plus dependencies and a small speech model. Expect minutes to tens of minutes; runner speed and film length determine runtime. The job stops after 90 minutes. There are no persistent servers. Artifacts expire after seven days: download films you want to keep. Public standard runners are generally free under GitHub's applicable terms; private repositories have plan allowances. Do not enable paid runners for this workflow.
 
 ## What is included
 
-- Local Qwen2.5-1.5B-Instruct story planning with CPU int8 weights and validated structured narration: ordered events from the brief become eight scenes, and the model writes their narration.
+- Local Qwen2.5-1.5B-Instruct-GGUF story planning through llama.cpp with official Q4_K_M weights and validated structured narration: ordered events from the brief become eight scenes, and the model writes their narration.
 - Two original procedural bald characters, male and female, selected once per film.
 - Bedroom, desk, street, park, gym and rooftop settings.
 - Idle, walk, sit, sleep, phone, write, exercise and reach poses, expressions and blinking.
@@ -34,27 +34,26 @@ A first run downloads approximately 3 GB of story-model weights plus dependencie
 - 1920×1080, 24 fps, H.264/AAC MP4 with streaming-friendly metadata.
 - Editable `story.json`, storyboard, character sheet, narration and generation report.
 
-**Visual scope:** this is a stylized procedural animation engine, not a general AI video model. The artwork is intentionally simple and original. It does not reproduce the supplied films' exact designs or polish. Motion uses a reusable pose rig rather than hand-drawn frame-by-frame acting. The internal design canvas is 960×540, scaled to a 1080p output; increasing output resolution does not add drawn detail. No lip sync is included. Captions use estimated phrase timings. The scene planner anchors locations/actions to the brief’s ordered sentences, expanding short briefs to eight scenes. The story model is small and may write weak narration or return invalid JSON; Drawable scene fields come from the supported library. Validation requires exactly eight narration entries, and invalid model output gets one correction attempt. Optional `--strict-json` enforces the narration structure token by token, at a considerable CPU cost; the default validates after generation. If the correction still fails, the job fails clearly instead of silently pretending to be a generated story. Rerun or rewrite the brief if that happens.
+**Visual scope:** this is a stylized procedural animation engine, not a general AI video model. The artwork is intentionally simple and original. It does not reproduce the supplied films' exact designs or polish. Motion uses a reusable pose rig rather than hand-drawn frame-by-frame acting. The internal design canvas is 960×540, scaled to a 1080p output; increasing output resolution does not add drawn detail. No lip sync is included. Captions use estimated phrase timings. The scene planner anchors locations/actions to the brief’s ordered sentences, expanding short briefs to eight scenes. The story model is small and may write weak narration or return invalid JSON; Drawable scene fields come from the supported library. Validation requires exactly eight narration entries, and invalid model output gets one correction attempt. The model narrates each planned shot separately. llama.cpp’s JSON grammar enforces the response structure, and all narration entries are validated before rendering. If the correction still fails, the job fails clearly instead of silently pretending to be a generated story. Rerun or rewrite the brief if that happens.
 
 For the most coherent results, describe a single protagonist, clear events, an obstacle and an ending. Keep physical actions within the included library. New settings/actions require adding artwork or rig code in `storyfilm/art.py`.
 
 ## Run locally
 
-Python 3.11+, FFmpeg and DejaVu Sans are recommended. On Ubuntu:
+Python 3.11 or 3.12 on Linux x86-64, FFmpeg and DejaVu Sans are recommended. On Ubuntu:
 
 ```bash
 sudo apt-get update
-sudo apt-get install -y ffmpeg fonts-dejavu-core
+sudo apt-get install -y ffmpeg fonts-dejavu-core build-essential cmake
 python -m venv .venv
 source .venv/bin/activate
 python -m pip install -r requirements.txt
-python -m pip install torch==2.6.0 --index-url https://download.pytorch.org/whl/cpu
-python -m pip install -r requirements-ai.txt
+CC=gcc CXX=g++ CMAKE_ARGS="-DGGML_NATIVE=OFF -DGGML_AVX2=ON -DGGML_FMA=ON -DGGML_F16C=ON -DLLAMA_CURL=OFF" CMAKE_BUILD_PARALLEL_LEVEL=2 python -m pip install -r requirements-ai.txt
 python -m storyfilm.render --title "One Small Step" --brief "A woman puts down her phone, writes one goal, and walks outside. She struggles but chooses to try again."
 python -m storyfilm.verify output/film.mp4
 ```
 
-Model downloads happen on first use. Subsequent local runs reuse Hugging Face's cache and `.cache/voices`. No secrets are required.
+Model downloads happen on first use. Subsequent local runs reuse `.cache/models` and `.cache/voices`. No secrets are required.
 
 ### Render an edited story
 
