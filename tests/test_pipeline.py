@@ -1,7 +1,7 @@
 import tempfile
 import unittest
 from pathlib import Path
-from storyfilm.planner import template_plan, validate, ACTIONS, LOCATIONS
+from storyfilm.planner import template_plan, validate, adapt_model_plan, ACTIONS, LOCATIONS
 from storyfilm.render import captions, timestamp
 from storyfilm.art import frame
 from storyfilm.audio import synthesize,read_wave
@@ -14,6 +14,17 @@ class PipelineTests(unittest.TestCase):
         p=template_plan('Title `uname`','She writes $(touch /tmp/never-create-this); then walks outside. She smiles. She rests.')
         self.assertIn('$(touch',p['scenes'][0]['narration'])
         self.assertEqual(p['title'],'Title `uname`')
+    def test_model_synonyms_preserve_the_story(self):
+        plan=template_plan('A new day',BRIEF)
+        narration=plan['scenes'][0]['narration']
+        plan['scenes'][0]['emotion']='reflective'
+        plan['scenes'][1]['emotion']='hopeful'
+        mapped,changes=adapt_model_plan(plan)
+        result=validate(mapped,'A new day',BRIEF)
+        self.assertEqual(result['scenes'][0]['emotion'],'neutral')
+        self.assertEqual(result['scenes'][1]['emotion'],'happy')
+        self.assertEqual(result['scenes'][0]['narration'],narration)
+        self.assertEqual(len(changes),2)
     def test_invalid_model_output(self):
         plan=template_plan('A new day',BRIEF);plan['scenes'][1]['location']='castle'
         with self.assertRaises(ValueError): validate(plan,'Title',BRIEF)
@@ -36,6 +47,14 @@ class PipelineTests(unittest.TestCase):
             caps=captions(plan,timings)
             self.assertTrue(all(a<b for a,b,_ in caps))
             self.assertTrue(all(caps[i][1]<=caps[i+1][0] for i in range(len(caps)-1)))
+    def test_audio_scene_lengths_match_frame_boundaries(self):
+        plan=template_plan('A new day',BRIEF)
+        with tempfile.TemporaryDirectory() as directory:
+            timings=synthesize(plan,Path(directory),'none',duration_scale=.25,fps=12)
+            for timing in timings:
+                self.assertAlmostEqual(timing['duration']*12,round(timing['duration']*12),places=7)
+            samples,sr=read_wave(Path(directory)/'soundtrack.wav')
+            self.assertAlmostEqual(len(samples)/sr,sum(t['duration'] for t in timings),places=4)
     def test_timestamp_rounding(self):
         self.assertEqual(timestamp(59.9999),'00:01:00,000')
     def test_one_lead(self):

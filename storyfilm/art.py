@@ -162,14 +162,19 @@ def character(im, x, floor, t, gender='male', action='idle', emotion='neutral', 
         d.line((49, y, 251, y), fill='#a6adb5', width=7)
         for xx in (54, 225):
             d.rounded_rectangle((xx, y-23, xx+21, y+23), radius=4, fill='#333b4a', outline='#7c8696', width=2)
-    elif action in {'phone', 'write'}:
+    elif action == 'phone':
         limb([(122, 158), (110, 197), (166, 182)])
         limb([(178, 157), (195, 194), (179, 174)])
         d.rounded_rectangle((163, 147, 191, 187), radius=5, fill='#192131', outline='#8991a2', width=2)
         d.rectangle((168, 154, 186, 178), fill='#6788a4')
-        if action == 'write':
-            d.rounded_rectangle((143,183,211,202),radius=2,fill='#d9d0b6',outline='#807c73',width=1)
-            d.line((178, 167, 200+math.sin(t*5)*4, 195), fill='#e7bd77', width=3)
+    elif action == 'write':
+        d.rounded_rectangle((143,218,225,237),radius=2,fill='#d9d0b6',outline='#807c73',width=1)
+        for yy in (224,229,234):
+            d.line((150,yy,216,yy),fill='#a59e8e',width=1)
+        limb([(122,158),(112,201),(156,222)])
+        moving=math.sin(t*5)*4
+        limb([(178,157),(202,196),(192+moving,214)])
+        d.line((187+moving,205,204+moving,229),fill='#e7bd77',width=3)
     elif action == 'reach':
         limb([(122, 158), (94, 126), (77, 101+math.sin(t)*5)])
         limb([(178, 158), (201, 128), (222, 105)])

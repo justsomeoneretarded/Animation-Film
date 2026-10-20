@@ -1,4 +1,5 @@
 name: Full AI film acceptance
+# Validate model vocabulary normalization and correction retry.
 on:
   workflow_dispatch:
   push:

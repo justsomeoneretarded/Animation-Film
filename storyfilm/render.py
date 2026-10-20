@@ -112,7 +112,7 @@ def main():
         plan=validate(json.loads(args.plan.read_text()),args.title,args.brief,args.character);source='saved-plan'
     elif args.planner=='ai':
         try:
-            plan=ai_plan(args.title,args.brief,args.character,args.model)
+            plan=ai_plan(args.title,args.brief,args.character,args.model,diagnostics_path=args.out/'ai-response.txt')
         except Exception as exc:
             if not args.allow_template_fallback:
                 raise RuntimeError('AI planning failed. Retry or explicitly choose --planner template. No misleading fallback was rendered.') from exc
@@ -121,6 +121,7 @@ def main():
     else:
         plan=template_plan(args.title,args.brief,args.character)
     (args.out/'story.json').write_text(json.dumps(plan,indent=2,ensure_ascii=False))
+    print(f"Planned {len(plan['scenes'])} scenes with the {plan['character']} lead.",flush=True)
     storyboard(plan,args.out);character_sheet(args.out)
     timings=synthesize(plan,args.out,args.voice,duration_scale=.25 if args.preview else 1,fps=args.fps)
     # Quantize every scene to frame boundaries to prevent cumulative caption drift.

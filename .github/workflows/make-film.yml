@@ -81,5 +81,6 @@ jobs:
             output/story.json
             output/storyboard.jpg
             output/report.json
+            output/ai-response.txt
           if-no-files-found: ignore
           retention-days: 3

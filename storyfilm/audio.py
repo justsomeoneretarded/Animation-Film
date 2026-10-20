@@ -74,6 +74,7 @@ def synthesize(plan, out, engine='piper', cache='.cache/voices', duration_scale=
         timings.append({'start':cursor,'duration':duration,'speech_start':cursor+.65,
                         'speech_duration':len(samples)/sr,'scene':i})
         cursor+=duration
+        print(f'Narration ready: scene {i+1}/{len(plan["scenes"])}',flush=True)
     narration=np.concatenate(all_audio)
     # Original restrained ambient score: slowly moving sine chords, no downloaded music.
     mix=narration*.84
