@@ -55,6 +55,9 @@ class PipelineTests(unittest.TestCase):
                 self.assertAlmostEqual(timing['duration']*12,round(timing['duration']*12),places=7)
             samples,sr=read_wave(Path(directory)/'soundtrack.wav')
             self.assertAlmostEqual(len(samples)/sr,sum(t['duration'] for t in timings),places=4)
+            caps=captions(plan,timings)
+            self.assertTrue(all(a<b for a,b,_ in caps))
+            self.assertLessEqual(caps[-1][1],sum(t['duration'] for t in timings))
     def test_timestamp_rounding(self):
         self.assertEqual(timestamp(59.9999),'00:01:00,000')
     def test_one_lead(self):

@@ -21,9 +21,10 @@ def captions(plan,timings):
     for scene,timing in zip(plan['scenes'],timings):
         words=scene['narration'].split()
         chunks=[' '.join(words[i:i+10]) for i in range(0,len(words),10)]
-        duration=min(timing['speech_duration'],timing['duration']-1.3)
+        margin=min(.65,timing['duration']*.2)
+        duration=min(timing['speech_duration'],timing['duration']-2*margin)
         total=sum(len(c.split()) for c in chunks)
-        pos=timing['start']+.65
+        pos=timing['start']+margin
         for chunk in chunks:
             end=pos+duration*len(chunk.split())/total
             entries.append((pos,end,chunk));pos=end

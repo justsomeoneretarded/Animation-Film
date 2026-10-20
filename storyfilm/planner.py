@@ -58,6 +58,20 @@ def template_plan(title, brief, character='auto'):
     return validate({'character': character, 'scenes': scenes}, title, brief, character)
 
 
+def story_schema():
+    return {'type':'object', 'required':['character','scenes'], 'properties':{
+        'character':{'type':'string','enum':['male','female']},
+        'scenes':{'type':'array','minItems':8,'maxItems':8,'items':{
+            'type':'object','required':['location','action','emotion','shadow','narration'],
+            'properties':{
+                'location':{'type':'string','enum':sorted(LOCATIONS)},
+                'action':{'type':'string','enum':sorted(ACTIONS)},
+                'emotion':{'type':'string','enum':sorted(EMOTIONS)},
+                'shadow':{'type':'boolean'},
+                'narration':{'type':'string','minLength':10,'maxLength':550}},
+            'additionalProperties':False}}},'additionalProperties':False}
+
+
 ALIASES = {
     'emotion': {'reflective':'neutral', 'thoughtful':'neutral', 'calm':'neutral',
                 'hopeful':'happy', 'hope':'happy', 'joyful':'happy', 'content':'happy',
@@ -89,6 +103,8 @@ def adapt_model_plan(plan):
 def ai_plan(title, brief, character='auto', model_id='Qwen/Qwen2.5-1.5B-Instruct', diagnostics_path=None):
     import torch
     from transformers import AutoTokenizer, AutoModelForCausalLM
+    from lmformatenforcer import JsonSchemaParser
+    from lmformatenforcer.integrations.transformers import build_transformers_prefix_allowed_tokens_fn
     torch.set_num_threads(4)
     print(f'Loading local story model: {model_id}', flush=True)
     tokenizer = AutoTokenizer.from_pretrained(model_id)
@@ -111,9 +127,11 @@ BRIEF: {json.dumps(brief)}'''
     print('Story model loaded; writing the scene plan on CPU.', flush=True)
     for attempt in range(2):
         inputs = tokenizer.apply_chat_template(messages, add_generation_prompt=True, return_tensors='pt')
+        constraint=build_transformers_prefix_allowed_tokens_fn(tokenizer,JsonSchemaParser(story_schema()))
         with torch.inference_mode():
             output = model.generate(inputs, attention_mask=torch.ones_like(inputs), max_new_tokens=2600,
-                                    do_sample=False, pad_token_id=tokenizer.eos_token_id)
+                                    do_sample=False, pad_token_id=tokenizer.eos_token_id,
+                                    prefix_allowed_tokens_fn=constraint)
         raw = tokenizer.decode(output[0][inputs.shape[1]:], skip_special_tokens=True)
         if diagnostics_path:
             Path(diagnostics_path).write_text(raw)

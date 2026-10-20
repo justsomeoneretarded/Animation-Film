@@ -7,6 +7,7 @@ No frames, characters, audio, logos or backgrounds are extracted from the refere
 - **en_US-ljspeech-medium** Piper voice: the exact voice model card is downloaded alongside the voice into `.cache/voices/MODEL_CARD`. Review it before distributing the model or using the voice commercially: https://huggingface.co/rhasspy/piper-voices/tree/main/en/en_US/ljspeech/medium . The LJSpeech dataset is public domain; this does not replace checking the model card.
 - **FFmpeg**: LGPL/GPL depending on build options. Ubuntu's libx264-enabled build includes GPL components. https://ffmpeg.org/legal.html . FFmpeg is installed separately, not included in this repository.
 - **DejaVu Sans**: DejaVu/Bitstream Vera font licenses. https://dejavu-fonts.github.io/License.html . Uses the system font; not bundled.
+- **LM Format Enforcer**: MIT. https://github.com/noamgat/lm-format-enforcer . Restricts model output to the scene JSON schema.
 - **Pillow**, **NumPy**, **PyTorch**, **Transformers**, **Accelerate**, **Safetensors** and **ONNX Runtime** retain their upstream licenses.
 
 Generated films do not include third-party model weights or software binaries. Review narration and story quality before publishing.
