@@ -1,7 +1,8 @@
+import json
 import tempfile
 import unittest
 from pathlib import Path
-from storyfilm.planner import template_plan, validate, adapt_model_plan, ACTIONS, LOCATIONS
+from storyfilm.planner import template_plan, validate, adapt_model_plan, story_schema, ACTIONS, LOCATIONS
 from storyfilm.render import captions, timestamp
 from storyfilm.art import frame
 from storyfilm.audio import synthesize,read_wave
@@ -14,6 +15,28 @@ class PipelineTests(unittest.TestCase):
         p=template_plan('Title `uname`','She writes $(touch /tmp/never-create-this); then walks outside. She smiles. She rests.')
         self.assertIn('$(touch',p['scenes'][0]['narration'])
         self.assertEqual(p['title'],'Title `uname`')
+    def test_generation_grammar_rejects_unsupported_emotions(self):
+        try:
+            from lmformatenforcer import JsonSchemaParser
+        except ImportError:
+            self.skipTest('AI dependencies are not installed')
+        plan=template_plan('A new day',BRIEF)
+        plan['scenes']*=2
+        text=json.dumps({'character':plan['character'],'scenes':plan['scenes']})
+        parser=JsonSchemaParser(story_schema())
+        for char in text:
+            self.assertIn(char,parser.get_allowed_characters())
+            parser=parser.add_character(char)
+        self.assertTrue(parser.can_end())
+        invalid=text.replace('"sad"','"worrying"',1)
+        parser=JsonSchemaParser(story_schema())
+        rejected=False
+        for char in invalid:
+            if char not in parser.get_allowed_characters():
+                rejected=True
+                break
+            parser=parser.add_character(char)
+        self.assertTrue(rejected)
     def test_model_synonyms_preserve_the_story(self):
         plan=template_plan('A new day',BRIEF)
         narration=plan['scenes'][0]['narration']
