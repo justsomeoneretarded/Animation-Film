@@ -1,5 +1,5 @@
 name: General writer acceptance
-# Validate physically coupled action/location schemas and a different female-led story.
+# Validate a complete 36-shot action story and sparse story direction for a female lead.
 on:
   workflow_dispatch:
   push:

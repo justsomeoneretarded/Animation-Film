@@ -49,12 +49,12 @@ jobs:
         run: |
           python - <<'PYCODE'
           import hashlib, json, os
-          data = ['visual-v4.2', os.environ['FILM_TITLE'], os.environ['FILM_BRIEF'], 'Qwen3-4B-Instruct-2507']
+          data = ['visual-v4.3', os.environ['FILM_TITLE'], os.environ['FILM_BRIEF'], 'Qwen3-4B-Instruct-2507']
           digest = hashlib.sha256(json.dumps(data).encode()).hexdigest()
           with open(os.environ['GITHUB_OUTPUT'], 'a') as out:
-              out.write('key=story-v42-' + digest + '\n')
+              out.write('key=story-v43-' + digest + '\n')
           PYCODE
-      - name: Restore completed story acts
+      - name: Restore story writing progress
         uses: actions/cache/restore@v4
         with:
           path: output/ai-response.checkpoint.json
@@ -79,7 +79,7 @@ jobs:
         run: python -m unittest discover -s tests -v
       - name: Write shots, animate and render
         run: python -m storyfilm.render --fps 12 --height 1080 --out output
-      - name: Preserve completed acts for a retry
+      - name: Preserve verified story progress for a retry
         if: "${{ always() && hashFiles('output/ai-response.checkpoint.json') != '' }}"
         uses: actions/cache/save@v4
         with:

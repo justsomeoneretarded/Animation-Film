@@ -156,40 +156,54 @@ class VisualScreenplayTests(unittest.TestCase):
             self.assertAlmostEqual(sum(t['duration'] for t in timings),21)
 
 class GeneralWriterContractTests(unittest.TestCase):
-    def test_structured_outline_and_repaired_acts_use_shared_contract(self):
-        from storyfilm.screenplay import write_screenplay
+    def test_complete_arc_action_binding_sparse_text_and_checkpoint(self):
+        from storyfilm.visual_writer import write,COUNT
         class Model:
             def __init__(self):self.calls=[]
             def create_chat_completion(self,**request):
                 self.calls.append(request)
-                if len(self.calls)==1:
-                    data={k:'A specific cause and consequence.' for k in ['opening','desire','obstacle','setback','decision','payoff','act_1','act_2','act_3']}
+                required=request['response_format']['schema']['required']
+                if 'opening' in required:
+                    data={k:'A specific cause and consequence.' for k in required}
+                elif 'scene_1' in required:
+                    data={}
+                    for i in range(COUNT):
+                        action,location,shot,emotion,prop=[('phone','bedroom','insert','worried',f'An unanswered question {i}'),('stand','bedroom','wide','tired',''),('walk','street','wide','worried',''),('write','desk','insert','worried',f'Draft {i}'),('send','park','insert','determined',f'An honest answer {i}'),('sit','park','reaction','neutral','')][i%6]
+                        if i%6==1 and i>=18:action='idle'
+                        if i==COUNT-1:action,location,shot,prop='write','desk','insert','Keep writing.'
+                        data[f'scene_{i+1}']=dict(action=action,location=location,shot=shot,emotion=emotion,prop_text=prop)
+                    if len(self.calls)==2:data.pop('scene_36')
                 else:
-                    n=7 if len(self.calls)==2 else 8
-                    data={'scenes':[dict(location='park',action='sit',emotion='worried',shot='reaction',duration=9,event=f'Reads the answer, then holds the reaction {i}.') for i in range(n)]}
+                    data=dict(captions=[dict(scene=i,text=t) for i,t in [(1,'The question had waited all night.'),(10,'An easy answer would have been another lie.'),(24,'Perfect was no longer the point.'),(36,'There was room for another sentence.')]],shadows=[dict(scene=2,text='Leave it unanswered.'),dict(scene=20,text='They will misunderstand.')])
                 return {'choices':[{'message':{'content':json.dumps(data)}}]}
-        model=Model()
+        model=Model();brief='She walks outside and sends an honest answer. End at the desk, writing again.'
         with tempfile.TemporaryDirectory() as directory:
             diagnostic=Path(directory)/'writer.txt'
-            p=write_screenplay(model,'A completely different title','She hesitates, then gives an honest answer.','female',diagnostic)
-            reused=write_screenplay(model,'A completely different title','She hesitates, then gives an honest answer.','female',diagnostic)
+            p=write(model,'A completely different title',brief,'female',diagnostic)
+            reused=write(model,'A completely different title',brief,'female',diagnostic)
             self.assertEqual(reused,p)
-        self.assertEqual(p['character'],'female');self.assertEqual(p['mode'],'text-led')
-        self.assertEqual(len(p['scenes']),24)
-        self.assertEqual(len(model.calls),5)
-        self.assertIn('act_3',model.calls[0]['response_format']['schema']['required'])
-        variants=model.calls[1]['response_format']['schema']['properties']['scenes']['items']['oneOf']
-        insert=variants[1]
-        self.assertIn('prop_text',insert['required'])
-        self.assertEqual(insert['properties']['prop_text']['minLength'],3)
-        self.assertEqual(insert['properties']['shot']['const'],'insert')
+        self.assertEqual(len(model.calls),4);self.assertEqual(len(p['scenes']),36)
+        self.assertEqual(p['scenes'][-1]['action'],'write');self.assertEqual(p['scenes'][-1]['location'],'desk')
+        self.assertEqual(sum(bool(s['caption']) for s in p['scenes']),4)
+        self.assertEqual(sum(bool(s['shadow_text']) for s in p['scenes']),2)
+        self.assertTrue(all('Writes' in s['event'] for s in p['scenes'] if s['action']=='write'))
+        self.assertTrue(all(not s['voiceover'] for s in p['scenes']))
+        variants=model.calls[1]['response_format']['schema']['properties']['scene_1']['oneOf']
         for location,action in [('bedroom','walk'),('gym','write'),('rooftop','sleep'),('street','sit'),('park','knock'),('desk','exercise')]:
             self.assertFalse(any(location in v['properties']['location']['enum'] and action in v['properties']['action']['enum'] for v in variants))
-        self.assertTrue(any('street' in v['properties']['location']['enum'] and 'walk' in v['properties']['action']['enum'] for v in variants))
-        self.assertTrue(all('crack' not in v['properties']['shadow']['enum'] for v in variants))
-        final=model.calls[-1]['response_format']['schema']['properties']['scenes']['items']['oneOf']
-        self.assertTrue(any('crack' in v['properties']['shadow']['enum'] for v in final))
-        self.assertTrue(all(s['shadow']=='none' and s['voiceover']=='' for s in p['scenes']))
+        for v in variants:
+            if v['properties']['shot']['enum']==['insert']:self.assertEqual(v['properties']['prop_text']['minLength'],3)
+    def test_director_rejects_pose_captions_and_repeated_shadow_lines(self):
+        from storyfilm.visual_writer import apply_direction
+        core=depression_plan('Title','Male lead.')['scenes']
+        core=(core+core)[:36]
+        captions=[dict(scene=i,text='A distinct story meaning '+str(i)) for i in (1,10,20,36)]
+        captions[0]['text']='She writes in her notebook.'
+        with self.assertRaises(ValueError):apply_direction(core,dict(captions=captions,shadows=[]),'Title','Male lead.','male')
+        captions[0]['text']='The question had waited all night.'
+        shadows=[dict(scene=2,text='Do not answer.'),dict(scene=3,text='Do not answer.')]
+        with self.assertRaises(ValueError):apply_direction(core,dict(captions=captions,shadows=shadows),'Title','Male lead.','male')
+
 
 class EnvironmentContactTests(unittest.TestCase):
     def test_phone_pose_uses_furniture_only_where_available(self):

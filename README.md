@@ -31,7 +31,7 @@ The reference study informed the shared renderer and general AI writer, not a ti
 
 - **Characters:** original rounded bodies and substantial curved limbs, short visible necks, small dark eyes, expressive brows/mouths. Bald male; female with hair. One selected human protagonist per film. A symbolic shadow can appear; supporting human characters are not implemented.
 - **Acting:** planted idle poses, restrained breathing, emotional posture changes, walking with stance/swing phases, seated phone handling, typing/sending/receiving, notebook writing, reaching, knocking at the street door, a controlled barbell rep, falling and getting up. Actions have preparation, contact and recovery phases instead of unrelated arm waving.
-- **Story:** the CPU Qwen3 4B writer first plans the complete arc, then stages three connected acts of eight shots each. Each shot specifies its concrete event, action, initial/final emotion, location, framing, duration and text. The output schema permits supported action/location pairs and requires readable insert text. Remaining invalid data is retried. There is no 400-word narration quota.
+- **Story:** the CPU Qwen3 4B writer first plans the complete arc, then writes the complete 36-shot arc in one pass, followed by sparse text direction. Each shot specifies a playable action, location, framing, emotion and actual object text. Scene descriptions are compiled from the animated actions; they cannot claim writing while the character is merely sitting. The text director adds only 4–6 story captions and at most four distinct shadow lines. The output schema permits supported action/location pairs and requires readable insert text. Remaining invalid data is retried. There is no 400-word narration quota.
 - **Editing:** explicit wide, close, reaction and object-insert shots. No automatic halfway cut or perpetual zoom. Shot lengths are fitted proportionally to 210 seconds and quantized to 12 FPS.
 - **Text:** brief white story captions, protagonist dialogue, red shadow lines, phone/notebook text and optional time/day labels are separate fields with separate timing. Receiving a message does not show a SENT label.
 - **Environments:** sparse, clear bedroom, desk, street, park, gym and rooftop sets; night/day lighting, furniture contact, repeatable layouts and optional room clutter, rain and snow.
@@ -65,7 +65,7 @@ python -m storyfilm.render --title "The Unfinished Page" --brief "Female lead. S
 python -m storyfilm.verify output/film.mp4 --height 1080 --fps 12 --min-seconds 180 --max-seconds 240
 ```
 
-The authored example does not need `requirements-ai.txt`. Models are cached in `.cache`. Validated outlines and completed acts are checkpointed; GitHub Actions restores compatible story checkpoints when you retry the same title and brief. Changing either input starts a new story.
+The authored example does not need `requirements-ai.txt`. Models are cached in `.cache`. Outlines, complete action plans and text directions are checkpointed; GitHub Actions restores compatible story checkpoints when you retry the same title and brief. Changing either input starts a new story.
 
 Edit `story.json` and render without replanning:
 
