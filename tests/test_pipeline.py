@@ -165,11 +165,20 @@ class GeneralWriterContractTests(unittest.TestCase):
                     data={'scenes':[dict(location='park',action='sit',emotion='worried',shot='reaction',duration=9,event=f'Reads the answer, then holds the reaction {i}.') for i in range(n)]}
                 return {'choices':[{'message':{'content':json.dumps(data)}}]}
         model=Model()
-        p=write_screenplay(model,'A completely different title','She hesitates, then gives an honest answer.','female')
+        with tempfile.TemporaryDirectory() as directory:
+            diagnostic=Path(directory)/'writer.txt'
+            p=write_screenplay(model,'A completely different title','She hesitates, then gives an honest answer.','female',diagnostic)
+            reused=write_screenplay(model,'A completely different title','She hesitates, then gives an honest answer.','female',diagnostic)
+            self.assertEqual(reused,p)
         self.assertEqual(p['character'],'female');self.assertEqual(p['mode'],'text-led')
         self.assertEqual(len(p['scenes']),24)
         self.assertEqual(len(model.calls),5)
         self.assertIn('act_3',model.calls[0]['response_format']['schema']['required'])
+        variants=model.calls[1]['response_format']['schema']['properties']['scenes']['items']['oneOf']
+        insert=variants[1]
+        self.assertIn('prop_text',insert['required'])
+        self.assertEqual(insert['properties']['prop_text']['minLength'],3)
+        self.assertEqual(insert['properties']['shot']['const'],'insert')
         self.assertTrue(all(s['shadow']=='none' and s['voiceover']=='' for s in p['scenes']))
 
 class EnvironmentContactTests(unittest.TestCase):

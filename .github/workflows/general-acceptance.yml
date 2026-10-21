@@ -1,5 +1,5 @@
 name: General writer acceptance
-# Validate a schema-constrained outline and three playable acts for a different female-led story.
+# Validate v4.2 mandatory insert text, cached acts and a different female-led story.
 on:
   workflow_dispatch:
   push:
