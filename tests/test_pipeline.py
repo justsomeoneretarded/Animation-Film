@@ -150,3 +150,24 @@ class VisualScreenplayTests(unittest.TestCase):
             samples,sr=read_wave(Path(directory)/'narration.wav')
             self.assertFalse(samples.any())
             self.assertAlmostEqual(sum(t['duration'] for t in timings),21)
+
+class GeneralWriterContractTests(unittest.TestCase):
+    def test_structured_outline_and_repaired_acts_use_shared_contract(self):
+        from storyfilm.screenplay import write_screenplay
+        class Model:
+            def __init__(self):self.calls=[]
+            def create_chat_completion(self,**request):
+                self.calls.append(request)
+                if len(self.calls)==1:
+                    data={k:'A specific cause and consequence.' for k in ['opening','desire','obstacle','setback','decision','payoff','act_1','act_2','act_3']}
+                else:
+                    n=7 if len(self.calls)==2 else 8
+                    data={'scenes':[dict(location='park',action='sit',emotion='worried',shot='reaction',duration=9,event=f'Reads the answer, then holds the reaction {i}.') for i in range(n)]}
+                return {'choices':[{'message':{'content':json.dumps(data)}}]}
+        model=Model()
+        p=write_screenplay(model,'A completely different title','She hesitates, then gives an honest answer.','female')
+        self.assertEqual(p['character'],'female');self.assertEqual(p['mode'],'text-led')
+        self.assertEqual(len(p['scenes']),24)
+        self.assertEqual(len(model.calls),5)
+        self.assertIn('act_3',model.calls[0]['response_format']['schema']['required'])
+        self.assertTrue(all(s['shadow']=='none' and s['voiceover']=='' for s in p['scenes']))

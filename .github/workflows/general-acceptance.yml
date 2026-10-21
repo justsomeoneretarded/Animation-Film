@@ -1,5 +1,5 @@
 name: General writer acceptance
-# Different title and female lead: exercise the shared AI path, not the authored example.
+# Validate a schema-constrained outline and three playable acts for a different female-led story.
 on:
   workflow_dispatch:
   push:
