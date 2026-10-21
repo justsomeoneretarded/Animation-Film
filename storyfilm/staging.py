@@ -82,7 +82,7 @@ def actor(im,x,floor,t,gender='male',action='idle',emotion='neutral',scale=1.,sh
         left[-1]=(sx-5,sy+87-raise_hand*31);right[-1]=(sx+30,sy+79-raise_hand*29)
     if action=='write':
         stroke=math.sin(t*8)*4 if .28<p<.78 else 0
-        left[-1]=(sx-8,sy+90);right[-1]=(sx+46+stroke,sy+91)
+        left[-1]=(sx-8,sy+70);right[-1]=(sx+46+stroke,sy+62)
     if action in {'reach','knock'}:
         reach=envelope(p,.18,.48);tap=math.sin((p-.56)*math.pi*24)*3 if action=='knock' and .56<p<.78 else 0
         right=[(sx+45,sy+8),(sx+60+reach*30,sy+57-reach*34),(sx+55+reach*76+tap,sy+107-reach*93)]
@@ -136,6 +136,11 @@ def actor(im,x,floor,t,gender='male',action='idle',emotion='neutral',scale=1.,sh
     dest=(round(x*S-400*scale),round(floor*S-490*S*scale))
     if action=='sleep':dest=(round(x*S-layer.width*.5),round(floor*S-layer.height*.65))
     im.alpha_composite(layer,dest)
+    if action=='write':
+        ax,ay=right[-1]
+        world=lambda xx,yy:(x+(xx-200)*scale,floor+(yy-490)*scale)
+        return {'pen':[world(ax+7,ay-21),world(ax-9,ay+26)]}
+    return None
 
 
 @lru_cache(maxsize=24)
@@ -238,19 +243,25 @@ def stage(scene,gender,title,t,duration,index,total,subtitle=''):
     shot=scene.get('shot','wide');scale=.83;x=490;floor=473
     if act=='walk':x=350+p*260;scale=.8
     if act in {'knock','reach'}:x=252;scale=.83
-    if loc=='desk':x=480;floor=501;scale=.82
+    if loc=='desk':x=480;floor=487;scale=.82
     if loc=='park' and act in {'sit','phone','send','receive'}:floor=475;scale=.88
     if act=='sleep':x=576;floor=370;scale=.72
     sh=scene.get('shadow','none');sh='loom' if sh is True else 'none' if sh is False else sh
     shadow_actor(im,x+151,floor,t,p,sh,scene.get('shadow_size',1.))
     d=Draw(im);d.ellipse((x-67,floor-4,x+70,floor+12),'#19212a')
     seated=act in {'sit','phone','send','receive','write'} and loc in {'park','bedroom','desk'}
-    actor(im,x,floor,t,gender,act,scene['emotion'],scale,progress=p,walk_speed=260/max(.01,duration)/scale,emotion_from=scene.get('emotion_from'),seated=seated)
+    pose=actor(im,x,floor,t,gender,act,scene['emotion'],scale,progress=p,walk_speed=260/max(.01,duration)/scale,emotion_from=scene.get('emotion_from'),seated=seated)
     d=Draw(im)
     if loc=='desk':
         d.box((342,381,804,400),'#a38b6d',EDGE,3,r=5)
         for xx in (362,774):d.box((xx,400,xx+12,506),'#574e44',EDGE,2)
         d.path([('M',451,374),('L',569,374),('L',584,382),('L',444,382),('L',451,374)],'#ede1c7',EDGE,1)
+        if act=='write' and isinstance(pose,dict):
+            amount=envelope(p,.28,.78)
+            if amount:d.line([(461,377),(461+amount*72,377)],'#53575a',.6)
+            # Paper is in front of the body; the pencil must be in front of paper.
+            a,b=pose['pen'];d.line([a,b],'#bfa278',4*scale)
+            d.line([b,(b[0]-scale,b[1]+2*scale)],EDGE,scale)
     if loc in {'bedroom','desk'} and weather=='rain':
         for k in range(10):
             xx=130+(k*31)%145;yy=120+(k*47+t*32)%178;d.line([(xx,yy),(xx-2,yy+10)],'#718899',.8)

@@ -83,4 +83,4 @@ For a shorter preview, add `--preview --height 540 --voice none`. The explicit `
 python -m unittest discover -s tests -v
 ```
 
-`screenplay.py`: shot contract and general story writer. `staging.py`: shared characters, acting, sets and editing. `art.py`: drawing primitives and object inserts. `planner.py`: model loading, lead selection and legacy-plan support. `audio.py`: timing, speech and sound. `render.py`: exports and encoding. `verify.py`: full decode and media checks. See [THIRD_PARTY.md](THIRD_PARTY.md) for licenses.
+`visual_writer.py`: complete action story and sparse text direction. `screenplay.py`: shared contract and authored example. `staging.py`: shared characters, acting, sets and editing. `art.py`: drawing primitives and object inserts. `planner.py`: model loading, lead selection and legacy-plan support. `audio.py`: timing, speech and sound. `render.py`: exports and encoding. `verify.py`: full decode and media checks. See [THIRD_PARTY.md](THIRD_PARTY.md) for licenses.

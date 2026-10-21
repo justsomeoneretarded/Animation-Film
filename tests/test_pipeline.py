@@ -237,4 +237,14 @@ class TextPlacementTests(unittest.TestCase):
         self.assertIsNone(ImageChops.difference(a.crop((700,400,1200,900)),b.crop((700,400,1200,900))).getbbox())
         self.assertIsNotNone(ImageChops.difference(a,b).getbbox())
 
+class DeskContactTests(unittest.TestCase):
+    def test_writing_pencil_reaches_the_visible_notebook_plane(self):
+        for gender in ('male','female'):
+            scene=dict(location='desk',action='write',emotion='neutral',time='day',weather='clear',shot='wide')
+            im=frame(scene,gender,'Title',3,6,1,4)
+            pixels=im.crop((990,752,1090,762)).getdata()
+            pencil=sum(abs(r-191)<4 and abs(g-162)<4 and abs(b-120)<4 for r,g,b in pixels)
+            self.assertGreater(pencil,4)
+
+
 if __name__=='__main__':unittest.main()

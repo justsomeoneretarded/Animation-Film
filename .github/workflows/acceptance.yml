@@ -1,5 +1,5 @@
 name: Full AI film acceptance
-# Validate exposed necks during phone acting, clear faces and the full v4 film at 1080p12.
+# Validate visible necks, notebook contact, clear faces and the full v4 film at 1080p12.
 on:
   workflow_dispatch:
   push:
