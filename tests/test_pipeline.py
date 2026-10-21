@@ -113,7 +113,6 @@ class PipelineTests(unittest.TestCase):
         self.assertTrue(narration_issues('She sits without touching it, and she writes another line.',{'action':'walk'}))
         self.assertFalse(narration_issues('She walks slowly along the pavement, then pauses at the curb.',{'action':'walk'}))
     def test_timestamp_rounding(self):self.assertEqual(timestamp(59.9999),'00:01:00,000')
-if __name__=='__main__':unittest.main()
 
 class VisualScreenplayTests(unittest.TestCase):
     def test_saved_plan_preserves_the_render_contract(self):
@@ -223,3 +222,5 @@ class TextPlacementTests(unittest.TestCase):
         b=frame(dict(scene,shadow_text='You did nothing again.'),'female','Title',4,8,0,4)
         self.assertIsNone(ImageChops.difference(a.crop((700,400,1200,900)),b.crop((700,400,1200,900))).getbbox())
         self.assertIsNotNone(ImageChops.difference(a,b).getbbox())
+
+if __name__=='__main__':unittest.main()

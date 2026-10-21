@@ -1,0 +1,228 @@
+{
+  "planner": "authored",
+  "model": null,
+  "voice": "piper",
+  "preview": false,
+  "character": "male",
+  "duration_seconds": 210.00000000000006,
+  "resolution": "1920x1080",
+  "fps": 12,
+  "timings": [
+    {
+      "start": 0,
+      "duration": 6.833333333333333,
+      "speech_start": 0.65,
+      "speech_duration": 0.0,
+      "scene": 0
+    },
+    {
+      "start": 6.833333333333333,
+      "duration": 6.833333333333333,
+      "speech_start": 7.483333333333333,
+      "speech_duration": 0.0,
+      "scene": 1
+    },
+    {
+      "start": 13.666666666666666,
+      "duration": 6.833333333333333,
+      "speech_start": 14.316666666666666,
+      "speech_duration": 0.0,
+      "scene": 2
+    },
+    {
+      "start": 20.5,
+      "duration": 6.833333333333333,
+      "speech_start": 21.15,
+      "speech_duration": 0.0,
+      "scene": 3
+    },
+    {
+      "start": 27.333333333333332,
+      "duration": 6.833333333333333,
+      "speech_start": 27.98333333333333,
+      "speech_duration": 0.0,
+      "scene": 4
+    },
+    {
+      "start": 34.166666666666664,
+      "duration": 6.833333333333333,
+      "speech_start": 34.81666666666666,
+      "speech_duration": 0.0,
+      "scene": 5
+    },
+    {
+      "start": 41.0,
+      "duration": 6.833333333333333,
+      "speech_start": 41.65,
+      "speech_duration": 0.0,
+      "scene": 6
+    },
+    {
+      "start": 47.833333333333336,
+      "duration": 6.833333333333333,
+      "speech_start": 48.483333333333334,
+      "speech_duration": 0.0,
+      "scene": 7
+    },
+    {
+      "start": 54.66666666666667,
+      "duration": 6.833333333333333,
+      "speech_start": 55.31666666666667,
+      "speech_duration": 0.0,
+      "scene": 8
+    },
+    {
+      "start": 61.50000000000001,
+      "duration": 6.833333333333333,
+      "speech_start": 62.150000000000006,
+      "speech_duration": 0.0,
+      "scene": 9
+    },
+    {
+      "start": 68.33333333333334,
+      "duration": 6.833333333333333,
+      "speech_start": 68.98333333333335,
+      "speech_duration": 0.0,
+      "scene": 10
+    },
+    {
+      "start": 75.16666666666667,
+      "duration": 6.833333333333333,
+      "speech_start": 75.81666666666668,
+      "speech_duration": 0.0,
+      "scene": 11
+    },
+    {
+      "start": 82.0,
+      "duration": 6.833333333333333,
+      "speech_start": 82.65,
+      "speech_duration": 0.0,
+      "scene": 12
+    },
+    {
+      "start": 88.83333333333333,
+      "duration": 6.833333333333333,
+      "speech_start": 89.48333333333333,
+      "speech_duration": 0.0,
+      "scene": 13
+    },
+    {
+      "start": 95.66666666666666,
+      "duration": 6.833333333333333,
+      "speech_start": 96.31666666666666,
+      "speech_duration": 0.0,
+      "scene": 14
+    },
+    {
+      "start": 102.49999999999999,
+      "duration": 6.833333333333333,
+      "speech_start": 103.14999999999999,
+      "speech_duration": 0.0,
+      "scene": 15
+    },
+    {
+      "start": 109.33333333333331,
+      "duration": 6.833333333333333,
+      "speech_start": 109.98333333333332,
+      "speech_duration": 0.0,
+      "scene": 16
+    },
+    {
+      "start": 116.16666666666664,
+      "duration": 6.833333333333333,
+      "speech_start": 116.81666666666665,
+      "speech_duration": 0.0,
+      "scene": 17
+    },
+    {
+      "start": 122.99999999999997,
+      "duration": 9.75,
+      "speech_start": 123.64999999999998,
+      "speech_duration": 0.0,
+      "scene": 18
+    },
+    {
+      "start": 132.74999999999997,
+      "duration": 6.833333333333333,
+      "speech_start": 133.39999999999998,
+      "speech_duration": 0.0,
+      "scene": 19
+    },
+    {
+      "start": 139.58333333333331,
+      "duration": 8.75,
+      "speech_start": 140.23333333333332,
+      "speech_duration": 0.0,
+      "scene": 20
+    },
+    {
+      "start": 148.33333333333331,
+      "duration": 6.833333333333333,
+      "speech_start": 148.98333333333332,
+      "speech_duration": 0.0,
+      "scene": 21
+    },
+    {
+      "start": 155.16666666666666,
+      "duration": 6.833333333333333,
+      "speech_start": 155.81666666666666,
+      "speech_duration": 0.0,
+      "scene": 22
+    },
+    {
+      "start": 162.0,
+      "duration": 6.833333333333333,
+      "speech_start": 162.65,
+      "speech_duration": 0.0,
+      "scene": 23
+    },
+    {
+      "start": 168.83333333333334,
+      "duration": 6.833333333333333,
+      "speech_start": 169.48333333333335,
+      "speech_duration": 0.0,
+      "scene": 24
+    },
+    {
+      "start": 175.66666666666669,
+      "duration": 6.833333333333333,
+      "speech_start": 176.3166666666667,
+      "speech_duration": 0.0,
+      "scene": 25
+    },
+    {
+      "start": 182.50000000000003,
+      "duration": 6.833333333333333,
+      "speech_start": 183.15000000000003,
+      "speech_duration": 0.0,
+      "scene": 26
+    },
+    {
+      "start": 189.33333333333337,
+      "duration": 6.833333333333333,
+      "speech_start": 189.98333333333338,
+      "speech_duration": 0.0,
+      "scene": 27
+    },
+    {
+      "start": 196.1666666666667,
+      "duration": 6.833333333333333,
+      "speech_start": 196.81666666666672,
+      "speech_duration": 0.0,
+      "scene": 28
+    },
+    {
+      "start": 203.00000000000006,
+      "duration": 7.0,
+      "speech_start": 203.65000000000006,
+      "speech_duration": 0.0,
+      "scene": 29
+    }
+  ],
+  "artwork": "Original rounded vector artwork rasterized at native 1920x1080.",
+  "writer": "authored-visual-depression-v4",
+  "target_seconds": 210.0,
+  "captions": "Timed screenplay text layers.",
+  "engine_version": 4,
+  "story_mode": "text-led"
+}

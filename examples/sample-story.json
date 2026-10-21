@@ -21,6 +21,7 @@
       "hud": "",
       "event": "An unanswered message waits while the room stays dark.",
       "voiceover": "",
+      "weather": "rain",
       "duration": 7.0,
       "narration": ""
     },
@@ -40,6 +41,7 @@
       "hud": "",
       "event": "Read the unanswered message.",
       "voiceover": "",
+      "weather": "rain",
       "duration": 7.0,
       "narration": ""
     },
@@ -59,6 +61,7 @@
       "hud": "",
       "event": "Starts an answer, hesitates.",
       "voiceover": "",
+      "weather": "rain",
       "duration": 7.0,
       "narration": ""
     },
@@ -78,6 +81,7 @@
       "hud": "",
       "event": "Stares at the phone without sending.",
       "voiceover": "",
+      "weather": "rain",
       "duration": 7.0,
       "narration": ""
     },
@@ -97,6 +101,7 @@
       "hud": "",
       "event": "Tries to make a simple list.",
       "voiceover": "",
+      "weather": "rain",
       "duration": 7.0,
       "narration": ""
     },
@@ -116,6 +121,7 @@
       "hud": "",
       "event": "Pencil stops after the first line.",
       "voiceover": "",
+      "weather": "rain",
       "duration": 7.0,
       "narration": ""
     },
@@ -135,6 +141,7 @@
       "hud": "",
       "event": "Looks down at the unfinished list.",
       "voiceover": "",
+      "weather": "rain",
       "duration": 7.0,
       "narration": ""
     },
@@ -154,6 +161,7 @@
       "hud": "",
       "event": "Lies on the bed as the night passes.",
       "voiceover": "",
+      "weather": "rain",
       "duration": 7.0,
       "narration": ""
     },
@@ -173,6 +181,7 @@
       "hud": "",
       "event": "Another message appears the next morning.",
       "voiceover": "",
+      "weather": "clear",
       "duration": 7.0,
       "narration": ""
     },
@@ -192,6 +201,7 @@
       "hud": "",
       "event": "Reads it; anxiety softens for a moment.",
       "voiceover": "",
+      "weather": "clear",
       "duration": 7.0,
       "narration": ""
     },
@@ -211,6 +221,7 @@
       "hud": "",
       "event": "Attempts to put the feeling into words.",
       "voiceover": "",
+      "weather": "clear",
       "duration": 7.0,
       "narration": ""
     },
@@ -230,6 +241,7 @@
       "hud": "",
       "event": "Writes one honest sentence.",
       "voiceover": "",
+      "weather": "clear",
       "duration": 7.0,
       "narration": ""
     },
@@ -249,6 +261,7 @@
       "hud": "",
       "event": "Reads what is written, then looks toward the window.",
       "voiceover": "",
+      "weather": "clear",
       "duration": 7.0,
       "narration": ""
     },
@@ -268,6 +281,7 @@
       "hud": "",
       "event": "Stops outside the doorway instead of retreating.",
       "voiceover": "",
+      "weather": "clear",
       "duration": 7.0,
       "narration": ""
     },
@@ -287,6 +301,7 @@
       "hud": "",
       "event": "Takes a hesitant walk away from the door.",
       "voiceover": "",
+      "weather": "clear",
       "duration": 7.0,
       "narration": ""
     },
@@ -306,6 +321,7 @@
       "hud": "",
       "event": "Sits on the empty bench with both feet on the ground.",
       "voiceover": "",
+      "weather": "clear",
       "duration": 7.0,
       "narration": ""
     },
@@ -325,6 +341,7 @@
       "hud": "",
       "event": "Brings the unanswered question back up.",
       "voiceover": "",
+      "weather": "clear",
       "duration": 7.0,
       "narration": ""
     },
@@ -344,6 +361,7 @@
       "hud": "",
       "event": "Pauses with the phone held still.",
       "voiceover": "",
+      "weather": "clear",
       "duration": 7.0,
       "narration": ""
     },
@@ -363,6 +381,7 @@
       "hud": "",
       "event": "Types the answer he has been avoiding.",
       "voiceover": "",
+      "weather": "clear",
       "duration": 10.0,
       "narration": ""
     },
@@ -382,6 +401,7 @@
       "hud": "",
       "event": "Holds after sending, worried about the reply.",
       "voiceover": "",
+      "weather": "clear",
       "duration": 7.0,
       "narration": ""
     },
@@ -401,6 +421,7 @@
       "hud": "",
       "event": "Reads a reply with a concrete invitation.",
       "voiceover": "",
+      "weather": "clear",
       "duration": 9.0,
       "narration": ""
     },
@@ -420,6 +441,7 @@
       "hud": "",
       "event": "Shoulders settle; the shadow becomes smaller.",
       "voiceover": "",
+      "weather": "clear",
       "duration": 7.0,
       "narration": ""
     },
@@ -439,6 +461,7 @@
       "hud": "",
       "event": "Walks home, slower but no longer retreating.",
       "voiceover": "",
+      "weather": "clear",
       "duration": 7.0,
       "narration": ""
     },
@@ -458,6 +481,7 @@
       "hud": "",
       "event": "Looks at the same unfinished list.",
       "voiceover": "",
+      "weather": "clear",
       "duration": 7.0,
       "narration": ""
     },
@@ -477,6 +501,7 @@
       "hud": "",
       "event": "Adds a practical next step underneath it.",
       "voiceover": "",
+      "weather": "clear",
       "duration": 7.0,
       "narration": ""
     },
@@ -496,6 +521,7 @@
       "hud": "",
       "event": "Writes the next step clearly.",
       "voiceover": "",
+      "weather": "clear",
       "duration": 7.0,
       "narration": ""
     },
@@ -515,6 +541,7 @@
       "hud": "6:00 PM",
       "event": "A new message arrives at six.",
       "voiceover": "",
+      "weather": "clear",
       "duration": 7.0,
       "narration": ""
     },
@@ -534,6 +561,7 @@
       "hud": "",
       "event": "Replies without pretending to be fine.",
       "voiceover": "",
+      "weather": "clear",
       "duration": 7.0,
       "narration": ""
     },
@@ -553,6 +581,7 @@
       "hud": "",
       "event": "Stays with the conversation; the shadow recedes.",
       "voiceover": "",
+      "weather": "clear",
       "duration": 7.0,
       "narration": ""
     },
@@ -572,6 +601,7 @@
       "hud": "",
       "event": "Ends on the same room and a different answer.",
       "voiceover": "",
+      "weather": "clear",
       "duration": 7.0,
       "narration": ""
     }

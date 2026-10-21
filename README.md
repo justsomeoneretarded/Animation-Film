@@ -31,7 +31,7 @@ The reference study informed the shared renderer and general AI writer, not a ti
 
 - **Characters:** original rounded bodies and substantial curved limbs, short visible necks, small dark eyes, expressive brows/mouths. Bald male; female with hair. One selected human protagonist per film. A symbolic shadow can appear; supporting human characters are not implemented.
 - **Acting:** planted idle poses, restrained breathing, emotional posture changes, walking with stance/swing phases, seated phone handling, typing/sending/receiving, notebook writing, reaching, knocking at the street door, a controlled barbell rep, falling and getting up. Actions have preparation, contact and recovery phases instead of unrelated arm waving.
-- **Story:** the CPU Qwen3 4B writer first plans the complete arc, then stages three connected acts of eight shots each. Each shot specifies its concrete event, action, initial/final emotion, location, framing, duration and text. Invalid combinations fail and are retried. There is no 400-word narration quota.
+- **Story:** the CPU Qwen3 4B writer first plans the complete arc, then stages three connected acts of eight shots each. Each shot specifies its concrete event, action, initial/final emotion, location, framing, duration and text. The output schema permits supported action/location pairs and requires readable insert text. Remaining invalid data is retried. There is no 400-word narration quota.
 - **Editing:** explicit wide, close, reaction and object-insert shots. No automatic halfway cut or perpetual zoom. Shot lengths are fitted proportionally to 210 seconds and quantized to 12 FPS.
 - **Text:** brief white story captions, protagonist dialogue, red shadow lines, phone/notebook text and optional time/day labels are separate fields with separate timing. Receiving a message does not show a SENT label.
 - **Environments:** sparse, clear bedroom, desk, street, park, gym and rooftop sets; night/day lighting, furniture contact, repeatable layouts and optional room clutter, rain and snow.
@@ -44,7 +44,7 @@ This remains procedural 2D animation with a finite rig and set library. It does 
 
 `film.mp4`, editable `story.json`, `screenplay.md`, `timeline.json`, `storyboard.jpg`, `characters.png`, `captions.srt`, `narration.wav` and `report.json`.
 
-The Markdown screenplay and JSON timeline describe the exact staged shots. Story text can overlap intentionally in separate visual layers; the SRT is a convenience export. The MP4 contains the designed text layers. [Character designs](examples/characters.png) · [Read the example screenplay](examples/Depressed.md) · [Storyboard](examples/storyboard.jpg) · [Watch the verified sample](examples/sample.mp4). These examples use the shared v4 engine. The repository video is compressed to 540p; workflow artifacts contain the 1080p film.
+The Markdown screenplay and JSON timeline describe the exact staged shots. Story text can overlap intentionally in separate visual layers; the SRT is a convenience export. The MP4 contains the designed text layers. [Character designs](examples/characters.png) · [Read the example screenplay](examples/Depressed.md) · [Storyboard](examples/storyboard.jpg) · [Watch the verified sample](examples/sample.mp4). These examples use the shared v4 engine. The repository sample and workflow films are both 1920×1080 at 12 FPS.
 
 ## Free execution
 
