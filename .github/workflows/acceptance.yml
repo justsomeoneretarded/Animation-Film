@@ -1,5 +1,5 @@
 name: Full AI film acceptance
-# Validate visible necks, stable framing and the revised message story at 1080p12.
+# Validate shared v4 acting, text-led storytelling and object inserts at 1080p12.
 on:
   workflow_dispatch:
   push:

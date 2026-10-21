@@ -27,12 +27,14 @@ class PipelineTests(unittest.TestCase):
     def test_authored_script_continuity_and_length(self):
         p=depression_plan('Depressed','Male lead.')
         self.assertEqual(p['target_seconds'],210)
-        words=sum(len(s['narration'].split()) for s in p['scenes'])
-        self.assertTrue(430<=words<=550)
-        self.assertIn('pressed send',p['scenes'][8]['narration'])
-        self.assertIn('clinic',p['scenes'][10]['narration'])
+        self.assertEqual(p['mode'],'text-led')
+        self.assertEqual(len(p['scenes']),30)
+        texts=' '.join(s['prop_text'] for s in p['scenes'])
+        self.assertIn('Can we talk?',texts)
+        self.assertIn('appointment',texts)
+        self.assertFalse(any(s['voiceover'] for s in p['scenes']))
         female=depression_plan('Depressed','Female lead.')
-        self.assertNotIn(' he ',' '.join(s['narration'] for s in female['scenes']))
+        self.assertNotIn(' he ',' '.join(s['caption'] for s in female['scenes']))
         self.assertEqual(female['character'],'female')
     def test_rejects_scene_metadata(self):
         values={f'scene_{i+1}':'She takes one small step and chooses to try again tomorrow.' for i in range(BEATS)}
@@ -107,3 +109,44 @@ class PipelineTests(unittest.TestCase):
         self.assertFalse(narration_issues('She walks slowly along the pavement, then pauses at the curb.',{'action':'walk'}))
     def test_timestamp_rounding(self):self.assertEqual(timestamp(59.9999),'00:01:00,000')
 if __name__=='__main__':unittest.main()
+
+class VisualScreenplayTests(unittest.TestCase):
+    def test_saved_plan_preserves_the_render_contract(self):
+        p=depression_plan('Another title','Female lead.')
+        checked=validate(json.loads(json.dumps(p)),'Another title','Female lead.')
+        self.assertEqual(checked,p)
+        self.assertEqual(checked['scenes'][18]['action'],'send')
+        self.assertEqual(checked['scenes'][20]['action'],'receive')
+        self.assertEqual(checked['scenes'][18]['prop_text'],'I am not doing well. Can we talk?')
+    def test_impossible_object_shots_are_rejected(self):
+        import copy
+        for mutation in [{'action':'walk','shot':'insert'},{'action':'write','location':'park'}, {'duration':float('nan')},{'shadow':'none','shadow_text':'Stay home.'}]:
+            p=copy.deepcopy(depression_plan('Title','Male lead.'))
+            p['scenes'][0].update(mutation)
+            with self.assertRaises(ValueError):validate(p,'Title','Male lead.')
+    def test_fall_and_recovery_have_different_body_levels(self):
+        from PIL import Image
+        images=[]
+        for action,p in [('idle',.8),('fall',.8),('getup',1.)]:
+            im=Image.new('RGBA',(1920,1080));character(im,480,475,1,'male',action,'neutral',progress=p)
+            images.append(im.getchannel('A').getbbox())
+        self.assertGreater(images[1][1],images[0][1]+100)
+        self.assertEqual(images[2][1],images[0][1])
+        self.assertEqual(images[2][3],images[0][3])
+    def test_phone_insert_keeps_send_and_receive_semantics(self):
+        from unittest.mock import patch
+        from storyfilm.staging import stage
+        from PIL import Image
+        for action in ('send','receive'):
+            scene=dict(location='park',action=action,emotion='worried',shot='insert',prop_text='A specific answer.')
+            with patch('storyfilm.art.insert_shot',return_value=Image.new('RGBA',(1920,1080))) as insert:
+                stage(scene,'female','Unrelated title',4,7,1,4)
+                self.assertEqual(insert.call_args.args[1]['action'],action)
+    def test_text_led_audio_does_not_download_an_unused_voice(self):
+        from unittest.mock import patch
+        p=depression_plan('Title','Female lead.')
+        with tempfile.TemporaryDirectory() as directory,patch('storyfilm.audio.voice_files',side_effect=AssertionError('Unnecessary voice download')):
+            timings=synthesize(p,Path(directory),'piper',duration_scale=.1,fps=12)
+            samples,sr=read_wave(Path(directory)/'narration.wav')
+            self.assertFalse(samples.any())
+            self.assertAlmostEqual(sum(t['duration'] for t in timings),21)

@@ -19,6 +19,10 @@ def timestamp(seconds):
 def captions(plan,timings):
     entries=[]
     for scene,timing in zip(plan['scenes'],timings):
+        if plan.get('mode')=='text-led':
+            for key,begin,end in [('caption',.08,.91),('dialogue',.25,.88),('shadow_text',.18,.88)]:
+                if scene.get(key):entries.append((timing['start']+timing['duration']*begin,timing['start']+timing['duration']*end,scene[key]))
+            continue
         words=scene['narration'].split()
         chunks=[' '.join(words[i:i+10]) for i in range(0,len(words),10)]
         margin=min(.65,timing['duration']*.2)
@@ -37,9 +41,9 @@ def storyboard(plan,out):
     for i,s in enumerate(plan['scenes']):
         im=frame(s,plan['character'],plan['title'],2.0,6,i,count).resize((480,270))
         x=i%2*480;y=i//2*328;sheet.paste(im,(x,y))
-        lines=wrapped(s['narration'],900,19)[:2]
+        lines=wrapped(s.get('event',s['narration']),900,19)[:2]
         # Text is drawn at half storyboard width.
-        text=s['narration'][:94]+('…' if len(s['narration'])>94 else '')
+        description=s.get('event',s['narration']);text=description[:94]+('…' if len(description)>94 else '')
         for j,line in enumerate(wrapped(text,450,13)[:3]):
             d.text((x+12,y+278+j*16),line,font=font(13),fill='#d7d9e1')
     sheet.save(out/'storyboard.jpg',quality=93)
@@ -72,7 +76,7 @@ def render_video(plan,timings,out,fps=12,height=1080):
             n=round(timing['duration']*fps)
             for j in range(n):
                 t=j/fps;absolute=timing['start']+t
-                subtitle=next((s for a,b,s in entries if a<=absolute<b),'')
+                subtitle='' if plan.get('mode')=='text-led' else next((s for a,b,s in entries if a<=absolute<b),'')
                 im=frame(scene,plan['character'],plan['title'],t,timing['duration'],i,len(timings),subtitle)
                 process.stdin.write(im.tobytes())
             print(f'Rendered scene {i+1}/{len(timings)}',flush=True)
@@ -140,7 +144,19 @@ def main():
             'resolution':f'{args.height*16//9}x{args.height}','fps':args.fps,'timings':timings,
             'artwork':'Original rounded vector artwork rasterized at native 1920x1080.',
             'writer':plan.get('writer',source),'target_seconds':plan.get('target_seconds'),
-            'captions':'Phrase timing estimated from narration duration, not forced alignment.'}
+            'captions':'Timed screenplay text layers.' if plan.get('mode')=='text-led' else 'Phrase timing estimated from narration duration, not forced alignment.',
+            'engine_version':4,'story_mode':plan.get('mode','legacy-narrated')}
+    timeline=[]
+    for scene,timing in zip(plan['scenes'],timings):
+        timeline.append(dict(start=round(timing['start'],3),end=round(timing['start']+timing['duration'],3),**scene))
+    (args.out/'timeline.json').write_text(json.dumps(timeline,indent=2,ensure_ascii=False))
+    script=['# '+plan['title'],'',f"{plan['character'].title()} lead · {args.fps} FPS · {cursor:.1f} seconds",'']
+    for i,row in enumerate(timeline):
+        script.extend([f"## {i+1}. {row['start']:.1f}–{row['end']:.1f}s | {row['location']} | {row.get('shot','wide')}",'',row.get('event',''),'',f"Action: {row['action']}. Emotion: {row.get('emotion_from',row['emotion'])} → {row['emotion']}."])
+        for key in ['caption','dialogue','shadow_text','prop_text','voiceover']:
+            if row.get(key):script.append(f"{key.replace('_',' ').title()}: {row[key]}")
+        script.append('')
+    (args.out/'screenplay.md').write_text('\n'.join(script))
     (args.out/'report.json').write_text(json.dumps(report,indent=2))
     print(f'Finished: {video}',flush=True)
 

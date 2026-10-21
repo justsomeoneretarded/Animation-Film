@@ -44,11 +44,6 @@ jobs:
           cache-dependency-path: |
             requirements.txt
             requirements-ai.txt
-      - name: Reuse downloaded speech voice
-        uses: actions/cache@v4
-        with:
-          path: .cache/voices
-          key: piper-ljspeech-medium-v1
       - name: Reuse local story weights
         if: "${{ !contains(inputs.brief, 'authored depression story') && !contains(inputs.brief, 'sample: depressed') }}"
         uses: actions/cache@v4
@@ -66,7 +61,7 @@ jobs:
         run: python -m pip install -r requirements-ai.txt
       - name: Test renderer and input handling
         run: python -m unittest discover -s tests -v
-      - name: Plan, animate, narrate and render
+      - name: Write shots, animate and render
         run: python -m storyfilm.render --fps 12 --height 1080 --out output
       - name: Verify finished MP4
         run: python -m storyfilm.verify output/film.mp4 --height 1080 --fps 12 --min-seconds 180 --max-seconds 240
@@ -77,6 +72,8 @@ jobs:
           path: |
             output/film.mp4
             output/story.json
+            output/screenplay.md
+            output/timeline.json
             output/storyboard.jpg
             output/characters.png
             output/captions.srt

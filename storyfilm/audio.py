@@ -43,7 +43,8 @@ def write_wave(path, samples, sr=24000):
 def synthesize(plan, out, engine='piper', cache='.cache/voices', duration_scale=1., fps=12):
     out=Path(out)
     voice=None
-    if engine=='piper':
+    has_voice=any(s.get('voiceover',s.get('narration','')) for s in plan['scenes'])
+    if engine=='piper' and has_voice:
         from piper import PiperVoice, SynthesisConfig
         voice=PiperVoice.load(str(voice_files(cache)))
     elif engine=='espeak' and not (shutil.which('espeak-ng') or shutil.which('espeak')):
@@ -52,12 +53,15 @@ def synthesize(plan, out, engine='piper', cache='.cache/voices', duration_scale=
     all_audio=[]; timings=[]; cursor=0; prepared=[]
     for i, scene in enumerate(plan['scenes']):
         dest=out/f'narration-{i:02d}.wav'
-        if engine=='piper':
+        spoken=scene.get('voiceover',scene.get('narration',''))
+        if not spoken:
+            rate=sr;samples=np.zeros(0,np.float32)
+        elif engine=='piper':
             with wave.open(str(dest),'wb') as wav:
-                voice.synthesize_wav(scene['narration'],wav,syn_config=SynthesisConfig(length_scale=1.12))
+                voice.synthesize_wav(spoken,wav,syn_config=SynthesisConfig(length_scale=1.12))
             samples, rate=read_wave(dest)
         elif engine=='espeak':
-            subprocess.run([shutil.which('espeak-ng') or shutil.which('espeak'), '-s','145','-v','en-us','-w',str(dest),'--',scene['narration']],check=True)
+            subprocess.run([shutil.which('espeak-ng') or shutil.which('espeak'), '-s','145','-v','en-us','-w',str(dest),'--',spoken],check=True)
             samples,rate=read_wave(dest)
         else:
             rate=sr
@@ -67,7 +71,8 @@ def synthesize(plan, out, engine='piper', cache='.cache/voices', duration_scale=
         prepared.append(samples)
         print(f'Speech ready: beat {i+1}/{len(plan["scenes"])}',flush=True)
     target=plan.get('target_seconds')
-    if target:
+    text_led=plan.get('mode')=='text-led'
+    if target and not text_led:
         # Preserve the spoken performance; only modest tempo changes are allowed.
         # A short script must be rewritten, not stretched into minutes of silence.
         speech_seconds=sum(len(a)/sr for a in prepared)
@@ -88,7 +93,9 @@ def synthesize(plan, out, engine='piper', cache='.cache/voices', duration_scale=
     used_frames=0
     for i,(scene,samples) in enumerate(zip(plan['scenes'],prepared)):
         lead=int(.65*sr)
-        if target:
+        if text_led:
+            duration=scene['duration']/sum(s['duration'] for s in plan['scenes'])*target*duration_scale
+        elif target:
             # Allocate pauses proportionally; final frame absorbs rounding.
             remaining=max(0,target-total_speech/sr)
             duration=(len(samples)/sr+remaining/len(prepared))*duration_scale
@@ -133,11 +140,14 @@ def synthesize(plan, out, engine='piper', cache='.cache/voices', duration_scale=
             mix[offset:end]+=air
         action=scene['action']
         step=.87 if action=='walk' else 1.3 if action=='write' else 3.1
-        if action in {'walk','write','phone'}:
-            for when in np.arange(1,timing['duration']-.4,step):
+        if action in {'walk','write','phone','send','receive','knock','fall','getup'}:
+            events=(np.arange(0,timing['duration']-.2,math.pi/3.6) if action=='walk' else np.arange(timing['duration']*.28,timing['duration']*.77,.45) if action=='write' else [timing['duration']*.48] if action=='fall' else [.04] if action=='receive' else [timing['duration']*.58,timing['duration']*.66] if action=='knock' else [timing['duration']*.72] if action=='send' else [])
+            for when in events:
                 start=offset+round(when*sr);n=min(round(sr*.13),len(mix)-start)
                 tt=np.arange(n)/sr
                 if action=='walk':sound=(rng.normal(0,1,n)*.022+np.sin(2*np.pi*91*tt)*.04)*np.exp(-tt*38)
+                elif action in {'fall','getup','knock'}:sound=(rng.normal(0,1,n)*.045+np.sin(2*np.pi*75*tt)*.06)*np.exp(-tt*35)
+                elif action=='receive':sound=np.sin(2*np.pi*880*tt)*.024*np.exp(-tt*22)
                 elif action=='write':sound=rng.normal(0,1,n)*.008*np.sin(np.pi*np.arange(n)/max(1,n))
                 else:sound=np.sin(2*np.pi*740*tt)*.009*np.exp(-tt*65)
                 mix[start:start+n]+=sound
