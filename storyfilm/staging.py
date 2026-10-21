@@ -207,20 +207,34 @@ def shadow_actor(im,x,floor,t,p,mode='loom',size=1.):
     im.alpha_composite(layer)
 
 
-def label(im,text,y=70,color='#f4f1e5',size=36,width=1540,bubble=False):
+def label(im,text,y=70,color='#f4f1e5',size=36,width=1540,bubble=False,cx=None):
     if not text:return
+    cx=W/2 if cx is None else cx
     lines=wrapped(text,width,size);dd=ImageDraw.Draw(im)
     lineheight=round(size*1.4)
     if bubble:
         tw=max(dd.textlength(line,font=font(size)) for line in lines)
-        dd.rounded_rectangle(((W-tw)/2-25,y-16,(W+tw)/2+25,y+len(lines)*lineheight+12),radius=20,fill=(15,20,28,240),outline=color,width=2)
+        dd.rounded_rectangle((cx-tw/2-25,y-16,cx+tw/2+25,y+len(lines)*lineheight+12),radius=20,fill=(15,20,28,240),outline=color,width=2)
     for j,line in enumerate(lines):
-        tw=dd.textlength(line,font=font(size));dd.text(((W-tw)/2,y+j*lineheight),line,font=font(size),fill=color,stroke_width=2,stroke_fill='#141a22')
+        tw=dd.textlength(line,font=font(size));dd.text((cx-tw/2,y+j*lineheight),line,font=font(size),fill=color,stroke_width=2,stroke_fill='#141a22')
 
 
 def stage(scene,gender,title,t,duration,index,total,subtitle=''):
     p=t/max(.001,duration);loc=scene['location'];act=scene['action'];day=scene.get('time','night')
     im=set_design(loc,day,scene.get('state','normal')).copy()
+    weather=scene.get('weather','rain' if loc in {'bedroom','desk'} and day=='night' else 'clear')
+    outdoors=loc in {'street','park','rooftop'}
+    if weather=='snow' and outdoors:
+        sd=Draw(im)
+        sd.path([('M',0,457),('C',220,447,320,470,480,456),('C',640,448,760,467,960,453),('L',960,464),('L',0,468),('L',0,457)],'#bcc8cf')
+        for k in range(55):
+            xx=(k*167+t*(16+k%4*7))%960;yy=(k*79+t*(21+k%5*4))%540
+            r=1+k%3*.55;sd.ellipse((xx-r,yy-r,xx+r,yy+r),'#c8d4dd')
+    elif weather=='rain' and outdoors:
+        sd=Draw(im)
+        for k in range(50):
+            xx=(k*137-t*26)%960;yy=(k*83+t*170)%540
+            sd.line([(xx,yy),(xx-4,yy+15)],'#8597a8',.8)
     shot=scene.get('shot','wide');scale=.83;x=490;floor=473
     if act=='walk':x=350+p*260;scale=.8
     if act in {'knock','reach'}:x=252;scale=.83
@@ -237,7 +251,7 @@ def stage(scene,gender,title,t,duration,index,total,subtitle=''):
         d.box((342,381,804,400),'#a38b6d',EDGE,3,r=5)
         for xx in (362,774):d.box((xx,400,xx+12,506),'#574e44',EDGE,2)
         d.path([('M',451,374),('L',569,374),('L',584,382),('L',444,382),('L',451,374)],'#ede1c7',EDGE,1)
-    if loc in {'bedroom','desk'} and day=='night':
+    if loc in {'bedroom','desk'} and weather=='rain':
         for k in range(10):
             xx=130+(k*31)%145;yy=120+(k*47+t*32)%178;d.line([(xx,yy),(xx-2,yy+10)],'#718899',.8)
     # Framing is a screenplay choice, never an automatic halfway cut.
@@ -255,7 +269,7 @@ def stage(scene,gender,title,t,duration,index,total,subtitle=''):
     if .08<=p<=.91:label(im,caption,80,size=38)
     text=scene.get('dialogue','')
     if .25<=p<=.88:label(im,text,810,size=36,bubble=True)
-    if .18<=p<=.88:label(im,scene.get('shadow_text',''),714,color='#ed8279',size=36)
+    if .18<=p<=.88:label(im,scene.get('shadow_text',''),230,color='#ed8279',size=32,width=560,cx=1580)
     hud=scene.get('hud','')
     if hud:ImageDraw.Draw(im).text((76,40),hud,font=font(28),fill='#dcd6c7')
     if index==total-1 and p>.75:

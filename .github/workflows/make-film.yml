@@ -44,6 +44,22 @@ jobs:
           cache-dependency-path: |
             requirements.txt
             requirements-ai.txt
+      - name: Identify this story for resumable writing
+        id: story_cache
+        run: |
+          python - <<'PYCODE'
+          import hashlib, json, os
+          data = ['visual-v4.2', os.environ['FILM_TITLE'], os.environ['FILM_BRIEF'], 'Qwen3-4B-Instruct-2507']
+          digest = hashlib.sha256(json.dumps(data).encode()).hexdigest()
+          with open(os.environ['GITHUB_OUTPUT'], 'a') as out:
+              out.write('key=story-v42-' + digest + '\n')
+          PYCODE
+      - name: Restore completed story acts
+        uses: actions/cache/restore@v4
+        with:
+          path: output/ai-response.checkpoint.json
+          key: ${{ steps.story_cache.outputs.key }}-${{ github.run_id }}-${{ github.run_attempt }}
+          restore-keys: ${{ steps.story_cache.outputs.key }}-
       - name: Reuse local story weights
         if: "${{ !contains(inputs.brief, 'authored depression story') && !contains(inputs.brief, 'sample: depressed') }}"
         uses: actions/cache@v4
@@ -63,6 +79,12 @@ jobs:
         run: python -m unittest discover -s tests -v
       - name: Write shots, animate and render
         run: python -m storyfilm.render --fps 12 --height 1080 --out output
+      - name: Preserve completed acts for a retry
+        if: "${{ always() && hashFiles('output/ai-response.checkpoint.json') != '' }}"
+        uses: actions/cache/save@v4
+        with:
+          path: output/ai-response.checkpoint.json
+          key: ${{ steps.story_cache.outputs.key }}-${{ github.run_id }}-${{ github.run_attempt }}
       - name: Verify finished MP4
         run: python -m storyfilm.verify output/film.mp4 --height 1080 --fps 12 --min-seconds 180 --max-seconds 240
       - name: Upload finished film and editable story
@@ -91,5 +113,6 @@ jobs:
             output/storyboard.jpg
             output/report.json
             output/ai-response.txt
+            output/ai-response.checkpoint.json
           if-no-files-found: ignore
           retention-days: 3

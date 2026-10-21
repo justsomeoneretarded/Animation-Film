@@ -34,7 +34,7 @@ The reference study informed the shared renderer and general AI writer, not a ti
 - **Story:** the CPU Qwen3 4B writer first plans the complete arc, then stages three connected acts of eight shots each. Each shot specifies its concrete event, action, initial/final emotion, location, framing, duration and text. Invalid combinations fail and are retried. There is no 400-word narration quota.
 - **Editing:** explicit wide, close, reaction and object-insert shots. No automatic halfway cut or perpetual zoom. Shot lengths are fitted proportionally to 210 seconds and quantized to 12 FPS.
 - **Text:** brief white story captions, protagonist dialogue, red shadow lines, phone/notebook text and optional time/day labels are separate fields with separate timing. Receiving a message does not show a SENT label.
-- **Environments:** sparse, clear bedroom, desk, street, park, gym and rooftop sets; night/day lighting, furniture contact, repeatable layouts and optional room clutter.
+- **Environments:** sparse, clear bedroom, desk, street, park, gym and rooftop sets; night/day lighting, furniture contact, repeatable layouts and optional room clutter, rain and snow.
 - **Shadow:** can loom, shrink or crack as part of a character choice. Its dialogue is optional.
 - **Audio:** text-led by default, with an original ambient score and scene foley. Footsteps follow the walking cycle; writing, notification, send, knock and fall sounds follow action phases. Optional short `voiceover` lines use local Piper; no voice model is downloaded when there are no spoken lines.
 
@@ -65,7 +65,7 @@ python -m storyfilm.render --title "The Unfinished Page" --brief "Female lead. S
 python -m storyfilm.verify output/film.mp4 --height 1080 --fps 12 --min-seconds 180 --max-seconds 240
 ```
 
-The authored example does not need `requirements-ai.txt`. Models are cached in `.cache`.
+The authored example does not need `requirements-ai.txt`. Models are cached in `.cache`. Validated outlines and completed acts are checkpointed; GitHub Actions restores compatible story checkpoints when you retry the same title and brief. Changing either input starts a new story.
 
 Edit `story.json` and render without replanning:
 
@@ -73,7 +73,7 @@ Edit `story.json` and render without replanning:
 python -m storyfilm.render --title "Revised Film" --brief "My edited original story." --plan output/story.json --out revised
 ```
 
-Keep `mode: text-led` and `version: 4`. Each shot needs `event`, `location`, `action`, `emotion`, and a 2–14 second `duration`; optional fields include `emotion_from`, `shot`, `time`, `state`, `caption`, `dialogue`, `prop_text`, `shadow`, `shadow_text`, `hud`, and `voiceover`. Production target is 180–240 seconds; use enough distinct material to fit naturally. The writer defaults to 210 seconds. Saved older narrated plans remain readable and use the new shared artwork.
+Keep `mode: text-led` and `version: 4`. Each shot needs `event`, `location`, `action`, `emotion`, and a 2–14 second `duration`; optional fields include `emotion_from`, `shot`, `time`, `state`, `weather` (`clear/rain/snow`), `caption`, `dialogue`, `prop_text`, `shadow`, `shadow_text`, `hud`, and `voiceover`. Production target is 180–240 seconds; use enough distinct material to fit naturally. The writer defaults to 210 seconds. Saved older narrated plans remain readable and use the new shared artwork.
 
 For a shorter preview, add `--preview --height 540 --voice none`. The explicit `--planner template` path is a debug tool that preserves input sentences; it is not the production story writer.
 

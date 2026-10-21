@@ -193,3 +193,22 @@ class EnvironmentContactTests(unittest.TestCase):
         p=depression_plan('Another title','Male lead.')
         bedroom=[s for s in p['scenes'] if s['location']=='bedroom']
         self.assertTrue(all(s['state']=='clutter' for s in bedroom))
+
+class WeatherTests(unittest.TestCase):
+    def test_winter_brief_defaults_to_visible_outdoor_snow(self):
+        p=depression_plan('Winter Arc','Male lead. A snowy winter walk.')
+        self.assertTrue(all(s['weather']=='snow' for s in p['scenes'] if s['location'] in {'street','park'}))
+        scene=dict(location='street',action='idle',emotion='worried',time='night',weather='clear')
+        clear=frame(scene,'male','Title',2,8,0,4)
+        snow=frame(dict(scene,weather='snow'),'male','Title',2,8,0,4)
+        self.assertGreater(sum(ImageStat.Stat(ImageChops.difference(clear,snow)).mean),.5)
+        p['scenes'][0]['weather']='hail'
+        with self.assertRaises(ValueError):validate(p,'Title','Male lead.')
+
+class TextPlacementTests(unittest.TestCase):
+    def test_shadow_dialogue_does_not_cover_the_leads_face(self):
+        scene=dict(location='desk',action='sit',emotion='sad',shot='close',shadow='loom')
+        a=frame(scene,'female','Title',4,8,0,4)
+        b=frame(dict(scene,shadow_text='You did nothing again.'),'female','Title',4,8,0,4)
+        self.assertIsNone(ImageChops.difference(a.crop((700,400,1200,900)),b.crop((700,400,1200,900))).getbbox())
+        self.assertIsNotNone(ImageChops.difference(a,b).getbbox())
