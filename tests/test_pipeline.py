@@ -98,7 +98,9 @@ class PipelineTests(unittest.TestCase):
             for action,emotion in [('idle','neutral'),('phone','sad')]:
                 im=Image.new('RGBA',(1920,1080))
                 character(im,480,470,1,gender,action,emotion)
-                neck=im.crop((946,420,978,438))
+                # Sample below the jaw, above the collar, in each actual pose.
+                region=(952,438,974,450) if action=='idle' else (984,492,1000,496)
+                neck=im.crop(region)
                 pixels=list(neck.getdata())
                 skin=sum(r>150 and g>130 and b>90 and a==255 for r,g,b,a in pixels)
                 self.assertGreater(skin/len(pixels),.9)

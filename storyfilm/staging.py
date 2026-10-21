@@ -40,8 +40,8 @@ def actor(im,x,floor,t,gender='male',action='idle',emotion='neutral',scale=1.,sh
     bob+=math.sin(t*1.7)*.65
     hip=(200+lean*.36,352+crouch+(20 if sitting else 0)+bob)
     shoulder=(200+lean,250+crouch+(20 if sitting else 0)+bob)
-    head=(shoulder[0]+8*hunch,177+6*hunch+crouch+(20 if sitting else 0)+bob)
-    if action in {'phone','write','send','receive'}:head=(head[0]+7,head[1]+6)
+    head=(shoulder[0]+8*hunch,170+6*hunch+crouch+(20 if sitting else 0)+bob)
+    if action in {'phone','write','send','receive'}:head=(head[0]+7,head[1]+1)
     cloth='#7f8d93' if gender=='male' else '#a18e98';pants='#44494f'
     # Shoes and curved substantial legs. Linear stance cancels world movement.
     for j in range(2):
@@ -110,7 +110,7 @@ def actor(im,x,floor,t,gender='male',action='idle',emotion='neutral',scale=1.,sh
     d.path([('M',hx-48,hy-41),('C',hx-35,hy-58,hx-8,hy-62,hx+12,hy-57)],None,'#f6eedc',4)
     current=emotion_from if emotion_from and p<.38 else emotion
     tired=current in {'sad','tired'}; worried=current=='worried'
-    eyes_y=hy+7+(4 if tired else 0)
+    eyes_y=hy+7+(4 if tired else 0)+(3 if action in {'phone','send','receive','write'} else 0)
     gaze=(2+4*envelope(p,.08,.3)) if action in {'phone','receive','send','write','reach','knock'} else 2
     blink=(t%4.7)>.0 and (t%4.7)<.12
     if action=='sleep':blink=True
