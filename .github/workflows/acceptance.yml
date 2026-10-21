@@ -1,5 +1,5 @@
 name: Full AI film acceptance
-# Validate shared v4 acting, text-led storytelling and object inserts at 1080p12.
+# Validate v4 contact timing, persistent room state and text-led shots at 1080p12.
 on:
   workflow_dispatch:
   push:

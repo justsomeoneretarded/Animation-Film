@@ -12,7 +12,7 @@ def validate_screenplay(plan,title,brief,lead):
     if lead not in {'male','female'}:raise ValueError('Invalid lead character')
     scenes=plan.get('scenes')
     if not isinstance(scenes,list) or not 4<=len(scenes)<=48:raise ValueError('Screenplay needs 4–48 shots')
-    out=[]
+    out=[];room_states={}
     for i,raw in enumerate(scenes):
         s={}
         for key,allowed,default in [('location',LOCATIONS,None),('action',ACTIONS,None),('emotion',EMOTIONS,None),('emotion_from',EMOTIONS,raw.get('emotion')),('shot',SHOTS,'wide'),('shadow',SHADOWS,'none'),('time',{'night','dawn','day'},'night'),('state',{'normal','clutter'},'normal')]:
@@ -33,6 +33,10 @@ def validate_screenplay(plan,title,brief,lead):
         if s['action']=='knock':
             # Stage at the actual door rather than waving at empty space.
             if s['location']!='street':raise ValueError('Knock uses the street door')
+        if s['location'] in {'bedroom','desk'}:
+            # Clutter cannot vanish between cuts: no cleanup action exists yet.
+            if room_states.get(s['location'])=='clutter':s['state']='clutter'
+            room_states[s['location']]=s['state']
         if s['shadow']=='none' and s['shadow_text']:raise ValueError('Shadow dialogue requires a visible shadow')
         s['narration']=s['voiceover'] # compatibility only; captions are separate
         out.append(s)
@@ -89,7 +93,7 @@ def depression_screenplay(title,brief,lead):
         scenes.append(dict(location=loc,action=action,event=event,emotion=emotion,caption=caption,prop_text=prop,shot=shot,duration=duration,**kw))
     add('bedroom','phone','An unanswered message waits while the room stays dark.',caption='The question had been there all day.',state='clutter')
     add('bedroom','receive','Read the unanswered message.',prop='How are you doing?',shot='insert')
-    add('bedroom','phone','Starts an answer, hesitates.',prop='Fine.',shot='close',emotion='worried')
+    add('bedroom','phone','Starts an answer, hesitates.',prop='Fine.',shot='insert',emotion='worried')
     add('bedroom','phone','Stares at the phone without sending.',emotion='sad',shadow='loom',shadow_text='Nobody needs to hear this.')
     add('desk','write','Tries to make a simple list.',prop='Shower. Breakfast. Answer.',caption='Even the small things had become negotiations.')
     add('desk','write','Pencil stops after the first line.',prop='Shower.',shot='insert')

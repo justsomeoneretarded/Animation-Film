@@ -108,7 +108,8 @@ def insert_shot(im,scene,gender,t,progress):
                 d.ellipse((420,y+13,448,y+41),'#dce3d7')
                 d.line([(462,y+23),(551,y+23)],'#e2e7da',3)
                 d.line([(419,y+53),(544,y+53)],'#e2e7da',2)
-        thumb_x=574+math.sin(t*2)*3;thumb_y=348-smooth(0,48,progress)
+        tap=smooth(0,1,(progress-.62)/.10)*(1-smooth(0,1,(progress-.78)/.14)) if scene.get('action')=='send' else 0
+        thumb_x=574-48*tap;thumb_y=348+41*tap
         capsule(d,(605,383),(thumb_x,thumb_y),27,skin)
         capsule(d,(369,369),(397,319),25,skin)
     else:
