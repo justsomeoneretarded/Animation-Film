@@ -1,5 +1,5 @@
 name: General writer acceptance
-# Validate v4.2 mandatory insert text, cached acts and a different female-led story.
+# Validate physically coupled action/location schemas and a different female-led story.
 on:
   workflow_dispatch:
   push:

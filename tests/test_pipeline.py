@@ -12,6 +12,9 @@ class PipelineTests(unittest.TestCase):
     def test_lead_selection_and_override(self):
         self.assertEqual(template_plan('A new day',BRIEF)['character'],'female')
         self.assertEqual(template_plan('A new day',BRIEF,'male')['character'],'male')
+        from storyfilm.planner import select_lead
+        self.assertEqual(select_lead('Male lead. He rereads her message.'),'male')
+        self.assertEqual(select_lead('Female protagonist. She rereads his message.'),'female')
     def test_brief_is_data(self):
         p=template_plan('Title `uname`','She writes $(touch /tmp/never-create-this); then walks outside. She smiles. She rests.')
         self.assertIn('$(touch',p['scenes'][0]['narration'])
@@ -179,6 +182,12 @@ class GeneralWriterContractTests(unittest.TestCase):
         self.assertIn('prop_text',insert['required'])
         self.assertEqual(insert['properties']['prop_text']['minLength'],3)
         self.assertEqual(insert['properties']['shot']['const'],'insert')
+        for location,action in [('bedroom','walk'),('gym','write'),('rooftop','sleep'),('street','sit'),('park','knock'),('desk','exercise')]:
+            self.assertFalse(any(location in v['properties']['location']['enum'] and action in v['properties']['action']['enum'] for v in variants))
+        self.assertTrue(any('street' in v['properties']['location']['enum'] and 'walk' in v['properties']['action']['enum'] for v in variants))
+        self.assertTrue(all('crack' not in v['properties']['shadow']['enum'] for v in variants))
+        final=model.calls[-1]['response_format']['schema']['properties']['scenes']['items']['oneOf']
+        self.assertTrue(any('crack' in v['properties']['shadow']['enum'] for v in final))
         self.assertTrue(all(s['shadow']=='none' and s['voiceover']=='' for s in p['scenes']))
 
 class EnvironmentContactTests(unittest.TestCase):

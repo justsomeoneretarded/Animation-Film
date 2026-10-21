@@ -42,7 +42,10 @@ def validate(plan,title,brief,character='auto'):
 
 
 def select_lead(brief,character='auto'):
-    return character if character!='auto' else ('female' if re.search(r'\b(she|her|woman|girl|female)\b',brief,re.I) else 'male')
+    if character!='auto':return character
+    explicit=re.search(r'\b(female|male)\s+(?:lead|protagonist)\b',brief,re.I)
+    if explicit:return explicit.group(1).lower()
+    return 'female' if re.search(r'\b(she|her|woman|girl|female)\b',brief,re.I) else 'male'
 
 
 def validate_narration(text):

@@ -98,16 +98,30 @@ First return opening, desire, obstacle, setback, decision, payoff (short strings
     properties={key:{'type':'string','enum':sorted(values)} for key,values in [('location',LOCATIONS),('action',ACTIONS),('emotion',EMOTIONS),('emotion_from',EMOTIONS),('shot',SHOTS),('shadow',SHADOWS),('time',{'night','dawn','day'}),('state',{'normal','clutter'})]}
     for key,limit in [('caption',120),('dialogue',100),('shadow_text',70),('prop_text',140),('hud',40),('event',160)]:properties[key]={'type':'string','maxLength':limit}
     properties['duration']={'type':'number','minimum':2,'maximum':14}
-    normal={'type':'object','properties':{**properties,'shot':{'type':'string','enum':['wide','close','reaction']}},'required':list(properties),'additionalProperties':False}
-    insert={'type':'object','properties':{**properties,'shot':{'const':'insert'},'action':{'type':'string','enum':['phone','send','receive','write']},'prop_text':{'type':'string','minLength':3,'maxLength':140}},'required':list(properties),'additionalProperties':False}
-    for variant in (normal,insert):variant['properties']['weather']={'type':'string','enum':['clear','rain','snow']}
-    schema={'type':'object','properties':{'scenes':{'type':'array','minItems':8,'maxItems':8,'items':{'oneOf':[normal,insert]}}},'required':['scenes'],'additionalProperties':False}
+    def variant(actions,locations,insert=False):
+        fields={**properties,'action':{'type':'string','enum':actions},'location':{'type':'string','enum':locations},'shot':{'const':'insert'} if insert else {'type':'string','enum':['wide','close','reaction']}}
+        if insert:fields['prop_text']={'type':'string','minLength':3,'maxLength':140}
+        fields['weather']={'type':'string','enum':['clear','rain','snow']}
+        return {'type':'object','properties':fields,'required':list(properties),'additionalProperties':False}
+    # Grammar constrains physical combinations, not merely each field in isolation.
+    variants=[variant(['idle','phone','send','receive'],sorted(LOCATIONS)),
+              variant(['phone','send','receive'],sorted(LOCATIONS),True),
+              variant(['sit','stand'],['bedroom','desk','park']),
+              variant(['sleep'],['bedroom']),
+              variant(['walk','fall','getup'],['street','park','rooftop']),
+              variant(['knock','reach'],['street']),
+              variant(['write'],['desk']),variant(['write'],['desk'],True),
+              variant(['exercise'],['gym'])]
+    schema={'type':'object','properties':{'scenes':{'type':'array','minItems':8,'maxItems':8,'items':{'oneOf':variants}}},'required':['scenes'],'additionalProperties':False}
     for act in range(3):
         if len(scenes)>=(act+1)*8:continue
+        act_schema=json.loads(json.dumps(schema))
+        if act<2:
+            for item in act_schema['properties']['scenes']['items']['oneOf']:item['properties']['shadow']['enum']=['none','loom','shrink']
         messages=[{'role':'system','content':'Write precise playable shots. Return only valid JSON.'},{'role':'user','content':f'''Story: {json.dumps(outline)}\nBrief data: {json.dumps(brief)}\n{contract}\nAlready staged: {json.dumps(scenes[-3:])}\nWrite act {act+1} only, exactly eight shots totaling about 70 seconds. End the film only in act 3. Each event describes exactly ONE available action, with its emotional consequence. All schema fields are required; unused text fields are empty strings. Supply prop_text for every object insert, with the exact message or notebook words. Captions do not describe invisible action. Use close/reaction shots for emotional changes. Do not narrate every shot. The shadow may crack only after the consequential choice in act 3.'''}]
         for attempt in range(3):
             print(f'Staging act {act+1}/3, attempt {attempt+1}.',flush=True)
-            response=model.create_chat_completion(messages=messages,max_tokens=2600,temperature=.55,response_format={'type':'json_object','schema':schema})
+            response=model.create_chat_completion(messages=messages,max_tokens=2600,temperature=.55,response_format={'type':'json_object','schema':act_schema})
             raw=response['choices'][0]['message']['content'];logs.append(raw)
             if diagnostics_path:diagnostics_path.write_text('\n\n'.join(logs))
             try:
