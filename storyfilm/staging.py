@@ -9,7 +9,7 @@ SKIN='#e9dfcb'; SHADE='#b8aa96'; EDGE='#171c24'
 def envelope(p,a,b):return smooth(0,1,(p-a)/max(.001,b-a))
 
 
-def actor(im,x,floor,t,gender='male',action='idle',emotion='neutral',scale=1.,shadow=False,progress=.5,walk_speed=24,emotion_from=None):
+def actor(im,x,floor,t,gender='male',action='idle',emotion='neutral',scale=1.,shadow=False,progress=.5,walk_speed=24,emotion_from=None,seated=None):
     """A round silhouette, integrated short neck and contact-aware pose phases.
 
     Feet are planted except during explicit walk/fall/recovery actions. Local
@@ -18,7 +18,7 @@ def actor(im,x,floor,t,gender='male',action='idle',emotion='neutral',scale=1.,sh
     p=max(0,min(1,progress)); q=envelope(p,.18,.68)
     layer=Image.new('RGBA',(800,1080));d=Draw(layer)
     # Center x=200, foot y=490. All joints follow the pelvis/shoulders.
-    sitting=action in {'sit','phone','receive','send','write'}
+    sitting=action in {'sit','phone','receive','send','write'} if seated is None else seated
     crouch=0;lean=0;lift=0
     if action=='fall':
         q=envelope(p,.18,.48);crouch=84*q;lean=57*q
@@ -202,7 +202,7 @@ def shadow_actor(im,x,floor,t,p,mode='loom',size=1.):
     for ex in (cx-23*a,cx+24*a):d.ellipse((ex-5*a,eye_y-3*a,ex+5*a,eye_y+4*a),'#da655e')
     if mode=='crack':
         crack=envelope(p,.3,.8)
-        d.line([(cx,cy-336*a),(cx-17*a,cy-280*a),(cx+12*a,cy-245*a),(cx-13*a,cy-180*a),(cx,cy-80*a)],'#f1d69b',max(1,crack*5))
+        if crack>0:d.line([(cx,cy-336*a),(cx-17*a,cy-280*a),(cx+12*a,cy-245*a),(cx-13*a,cy-180*a),(cx,cy-80*a)],'#f1d69b',max(1,crack*5))
         if p>.8:layer.putalpha(layer.getchannel('A').point(lambda v:round(v*(1-envelope(p,.8,1)))))
     im.alpha_composite(layer)
 
@@ -223,14 +223,15 @@ def stage(scene,gender,title,t,duration,index,total,subtitle=''):
     im=set_design(loc,day,scene.get('state','normal')).copy()
     shot=scene.get('shot','wide');scale=.83;x=490;floor=473
     if act=='walk':x=350+p*260;scale=.8
-    if act=='knock':x=252;scale=.83
+    if act in {'knock','reach'}:x=252;scale=.83
     if loc=='desk':x=480;floor=501;scale=.82
     if loc=='park' and act in {'sit','phone','send','receive'}:floor=475;scale=.88
     if act=='sleep':x=576;floor=370;scale=.72
     sh=scene.get('shadow','none');sh='loom' if sh is True else 'none' if sh is False else sh
     shadow_actor(im,x+151,floor,t,p,sh,scene.get('shadow_size',1.))
     d=Draw(im);d.ellipse((x-67,floor-4,x+70,floor+12),'#19212a')
-    actor(im,x,floor,t,gender,act,scene['emotion'],scale,progress=p,walk_speed=260/max(.01,duration)/scale,emotion_from=scene.get('emotion_from'))
+    seated=act in {'sit','phone','send','receive','write'} and loc in {'park','bedroom','desk'}
+    actor(im,x,floor,t,gender,act,scene['emotion'],scale,progress=p,walk_speed=260/max(.01,duration)/scale,emotion_from=scene.get('emotion_from'),seated=seated)
     d=Draw(im)
     if loc=='desk':
         d.box((342,381,804,400),'#a38b6d',EDGE,3,r=5)

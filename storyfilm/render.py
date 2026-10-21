@@ -39,7 +39,8 @@ def storyboard(plan,out):
     count=len(plan['scenes']); rows=(count+1)//2
     sheet=Image.new('RGB',(960,rows*328),'#080b11');d=ImageDraw.Draw(sheet)
     for i,s in enumerate(plan['scenes']):
-        im=frame(s,plan['character'],plan['title'],2.0,6,i,count).resize((480,270))
+        duration=s.get('duration',6)
+        im=frame(s,plan['character'],plan['title'],duration*.80,duration,i,count).resize((480,270))
         x=i%2*480;y=i//2*328;sheet.paste(im,(x,y))
         lines=wrapped(s.get('event',s['narration']),900,19)[:2]
         # Text is drawn at half storyboard width.

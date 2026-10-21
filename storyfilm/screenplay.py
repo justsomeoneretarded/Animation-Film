@@ -30,6 +30,9 @@ def validate_screenplay(plan,title,brief,lead):
         if s['shot']=='insert' and not s['prop_text']:raise ValueError('Object insert needs exact readable prop_text')
         if s['action']=='write' and s['location']!='desk':raise ValueError('Writing needs the desk and notebook')
         if s['action']=='exercise' and s['location']!='gym':raise ValueError('Barbell action needs the gym')
+        if s['action'] in {'sit','stand'} and s['location'] not in {'bedroom','desk','park'}:raise ValueError('Seated poses need the bed, desk chair or park bench')
+        if s['action']=='sleep' and s['location']!='bedroom':raise ValueError('Sleeping needs the bed')
+        if s['action']=='reach' and s['location']!='street':raise ValueError('Reaching uses the street door')
         if s['action'] in {'fall','getup','walk','knock'} and s['location'] not in {'street','park','rooftop'}:raise ValueError('Moving action needs an unobstructed outdoor floor')
         if s['action']=='knock':
             # Stage at the actual door rather than waving at empty space.
@@ -52,7 +55,7 @@ def write_screenplay(model,title,brief,lead,diagnostics_path=None):
     """One full story outline, followed by connected, drawable shots for each act."""
     contract='''Only one visible human protagonist; a symbolic shadow is permitted, no other people or animals.
 Available locations: bedroom (bed and clock), desk (chair, lamp, notebook), street (door and lamp), park (bench), gym (barbell), rooftop (parapet).
-Available actions: idle, sit, stand (rise from seated), sleep (on bed), walk (outdoors), phone, receive, send, write (desk), exercise (gym one barbell rep), reach, knock (street door), fall (outdoors), getup (outdoors).
+Available actions: idle, sit (bedroom, desk, park), stand (rise from seated in bedroom, desk, park), sleep (bedroom bed), walk (outdoors), phone, receive, send, write (desk), exercise (gym one barbell rep), reach (street door), knock (street door), fall (outdoors), getup (outdoors).
 A phone send/receive or notebook write can use shot=insert to show the exact prop_text. Other shots are wide, close or reaction. Each shot is one continuous action; cut to a NEW shot for reaction, insert or changed action. Maintain location/time continuity between close-ups. A getup follows a fall in the same place. No unrenderable actions like eating, driving, hugging or speaking to an unseen person. No invented objects. Avoid repeated idle/sit shots. Actions must change the situation, not merely illustrate a moral.
 Emotion and emotion_from: sad, worried, tired, neutral, determined, happy. Shadow: none, loom, shrink, crack. When shown it must have a story role. shadow_text is its short temptation or criticism. Time: night, dawn, day. State: normal, clutter.
 Caption: optional white story text, at most 18 words; use sparingly (less than half the shots). Dialogue: optional short words from the protagonist. Prop_text: exact phone message/notebook words. HUD: optional day label/clock, only when time actually passes. voiceover should be empty: the film is carried by acting, text, music and foley.

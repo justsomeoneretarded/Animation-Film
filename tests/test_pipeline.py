@@ -171,3 +171,16 @@ class GeneralWriterContractTests(unittest.TestCase):
         self.assertEqual(len(model.calls),5)
         self.assertIn('act_3',model.calls[0]['response_format']['schema']['required'])
         self.assertTrue(all(s['shadow']=='none' and s['voiceover']=='' for s in p['scenes']))
+
+class EnvironmentContactTests(unittest.TestCase):
+    def test_phone_pose_uses_furniture_only_where_available(self):
+        from unittest.mock import patch
+        from storyfilm.staging import stage
+        for location,seated in [('street',False),('gym',False),('rooftop',False),('park',True),('bedroom',True),('desk',True)]:
+            with patch('storyfilm.staging.actor') as actor:
+                stage(dict(location=location,action='phone',emotion='worried'),'male','Any title',2,8,0,4)
+                self.assertEqual(actor.call_args.kwargs['seated'],seated)
+    def test_clutter_does_not_disappear_between_room_visits(self):
+        p=depression_plan('Another title','Male lead.')
+        bedroom=[s for s in p['scenes'] if s['location']=='bedroom']
+        self.assertTrue(all(s['state']=='clutter' for s in bedroom))
