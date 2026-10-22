@@ -138,6 +138,6 @@ def ai_plan(title,brief,character='auto',model_id=MODEL_ID,diagnostics_path=None
         quota,period=Path('/sys/fs/cgroup/cpu.max').read_text().split()
         if quota!='max':threads=min(threads,max(1,int(quota)//int(period)))
     except (OSError,ValueError):pass
-    model=Llama(model_path=str(path),n_ctx=12288,n_batch=256,n_threads=threads,n_threads_batch=threads,chat_format='chatml',verbose=False,seed=42)
+    model=Llama(model_path=str(path),n_ctx=8192,n_batch=256,n_threads=threads,n_threads_batch=threads,chat_format='chatml',verbose=False,seed=42)
     from .screenplay import write_screenplay
     return write_screenplay(model,title,brief,select_lead(brief,character),Path(diagnostics_path) if diagnostics_path else None)
