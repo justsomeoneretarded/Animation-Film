@@ -16,7 +16,7 @@ Example for the general AI writer:
 **Brief:**
 > Female lead. She avoids answering a difficult message in her bedroom. She tries to write the truth in a notebook at her desk but stops. She takes a walk outside, then sits on a park bench. She returns to the message and sends a short honest answer instead of a perfect one. End at the same desk, writing again. Quiet and specific, with no instant transformation.
 
-Give the character a desire, an obstacle, a concrete setback and a choice with a consequence. Four to eight chronological events work well. The generator must stage them within its supported locations and actions; arbitrary objects and activities need new artwork/code.
+Describe the relationship or training goal, the emotional conflict, weather/time and preferred ending. The brief guides selection within the three supported story families below; it is not a promise to reproduce an arbitrary sequence of events. New objects, activities and story structures need new artwork/code.
 
 For the included, deliberately written example:
 
@@ -47,7 +47,7 @@ This remains procedural 2D animation with a finite rig and set library. It does 
 
 `film.mp4`, editable `story.json`, `screenplay.md`, `timeline.json`, **`frames.jsonl`**, `storyboard.jpg`, `characters.png`, `captions.srt`, `narration.wav` and `report.json`.
 
-The Markdown screenplay and JSON timeline describe the staged shots, story changes and simultaneous performance/environment layers. `frames.jsonl` contains one record for every output frame: character action phase, emotion, gaze, gesture, typing/sent state, camera, weather phase, clock time and sound cues. This is generated from timed tracks, rather than asking a language model to invent thousands of unrelated frames. Story text can overlap intentionally in separate visual layers; the SRT is a convenience export. The MP4 contains the designed text layers. [Character designs](examples/characters.png) · [Read the example screenplay](examples/Depressed.md) · [Storyboard](examples/storyboard.jpg) · [Watch the verified sample](examples/sample.mp4). The repository example is an archived v4 film; it does not demonstrate the latest timing and writing. New workflow runs use v5. The repository sample and workflow films are both 1920×1080 at 12 FPS.
+The Markdown screenplay and JSON timeline describe the staged shots, story changes and simultaneous performance/environment layers. `frames.jsonl` contains one record for every output frame: character action phase, emotion, gaze, gesture, typing/sent state, camera, weather phase, clock time and sound cues. This is generated from timed tracks, rather than asking a language model to invent thousands of unrelated frames. Story text can overlap intentionally in separate visual layers; the SRT is a convenience export. The MP4 contains the designed text layers. [Character designs](examples/characters.png) · [Read the sample screenplay](examples/sample-screenplay.md) · [Storyboard](examples/storyboard.jpg) · [Watch the verified sample](examples/sample.mp4). The current sample is **The Message I Deleted**, made with the v8 constrained director and shared v5 renderer: 47 shots, about 3:16, 1920×1080 at 12 FPS. It demonstrates the shared motion, native phone inserts, draft continuity, emotional turns and simultaneous environment layers. [Verified GitHub run](https://github.com/justsomeoneretarded/Animation-Film/actions/runs/39829602971). The earlier authored depression screenplay remains in `examples/Depressed.md` as a separate example.
 
 ## Free execution
 
@@ -68,7 +68,7 @@ python -m storyfilm.render --title "The Unfinished Page" --brief "Female lead. S
 python -m storyfilm.verify output/film.mp4 --height 1080 --fps 12 --min-seconds 180 --max-seconds 240
 ```
 
-The authored example does not need `requirements-ai.txt`. Models are cached in `.cache`. Premises and verified role dialogue are checkpointed; GitHub Actions restores compatible story checkpoints when you retry the same title and brief. Changing either input starts a new story.
+The authored example does not need `requirements-ai.txt`. Models are cached in `.cache`. Supported story-detail selections are checkpointed; GitHub Actions restores compatible selections when you retry the same title and brief. Dialogue and staging are rebuilt by the current shared director. Changing either input starts a new selection.
 
 Edit `story.json` and render without replanning:
 
