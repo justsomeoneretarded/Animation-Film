@@ -157,7 +157,7 @@ class VisualScreenplayTests(unittest.TestCase):
 
 class GeneralWriterContractTests(unittest.TestCase):
     def test_complete_arc_action_binding_sparse_text_and_checkpoint(self):
-        from storyfilm.visual_writer import write,COUNT,beat_schema
+        from storyfilm.visual_writer import write,COUNT,beat_schema,EVENT_CODES
         class Model:
             def __init__(self):self.calls=[]
             def create_chat_completion(self,**request):
@@ -168,7 +168,8 @@ class GeneralWriterContractTests(unittest.TestCase):
                     for i in range(COUNT):
                         action,location,emotion,prop=[('receive','bedroom','hurt',f'You stopped answering my invitations {i}.'),('phone','bedroom','angry',f'You forgot about me again {i}.'),('dismiss','bedroom','ashamed',f'That accusation was unfair {i}.'),('write','desk','ashamed',f'I ignored your invitations {i}.'),('stand','desk','determined',''),('walk','street','worried',''),('clench','park','hurt',''),('send','park','relieved',f'I am sorry I did not answer you {i}.')][i%8]
                         if i==COUNT-1:action,location,prop='write','desk','What I need to say tomorrow.'
-                        data[f'beat_{i+1}']=dict(action=action,location=location,emotion=emotion,prop_text=prop,change='New specific information changes the next decision '+str(i))
+                        kind=next(k for k,v in EVENT_CODES.items() if v==(action,location))
+                        data[f'beat_{i+1}']=dict(event=kind,emotion=emotion,prop_text=prop or '---',change='New specific information changes the next decision '+str(i))
                     if len(self.calls)==2:data.pop('beat_32')
                 else:data=dict(captions=[dict(scene=i,text=t) for i,t in [(1,'The invitations had stopped.'),(10,'An easy answer would have been another lie.'),(24,'That silence had hurt someone else.'),(47,'Tomorrow would require an honest answer.')]],shadows=[dict(scene=2,text='Leave it unanswered.'),dict(scene=20,text='They will misunderstand.')])
                 return {'choices':[{'message':{'content':json.dumps(data)}}]}
@@ -182,8 +183,9 @@ class GeneralWriterContractTests(unittest.TestCase):
         self.assertEqual(sum(bool(x['caption']) for x in p['scenes']),4)
         self.assertEqual(sum(x['shot']!='reaction' for x in p['scenes']),32)
         required=beat_schema(brief)['properties']
-        self.assertEqual(required['beat_25']['properties']['action']['enum'],['send'])
-        self.assertEqual(required['beat_32']['properties']['action']['enum'],['write'])
+        self.assertTrue(all(EVENT_CODES[k][0]=='send' for k in required['beat_25']['properties']['event']['enum']))
+        self.assertEqual(required['beat_32']['properties']['event']['enum'],['write_note__desk'])
+        self.assertFalse(any(k=='walk__bedroom' for x in required.values() for k in x['properties']['event']['enum']))
     def test_director_rejects_pose_captions_and_repeated_shadow_lines(self):
         from storyfilm.visual_writer import apply_direction
         core=depression_plan('Title','Male lead.')['scenes']

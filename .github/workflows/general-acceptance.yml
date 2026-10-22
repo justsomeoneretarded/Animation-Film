@@ -1,5 +1,5 @@
 name: General writer acceptance
-# Validate a different title, consequential events and simultaneous frame layers.
+# Validate a different title, consequential events and simultaneous frame layers with typed playable event codes.
 on:
   workflow_dispatch:
   push:
