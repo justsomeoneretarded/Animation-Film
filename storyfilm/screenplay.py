@@ -51,6 +51,8 @@ def validate_screenplay(plan,title,brief,lead):
         for key,allowed,default in [('gaze',{'phone','notebook','window','ground','camera','door'},'phone' if s['action'] in {'phone','send','receive','dismiss'} else 'notebook' if s['action']=='write' else 'ground'),('gesture',{'none','fidget','clench','wipe_tear'},'none')]:
             s[key]=raw.get(key,default)
             if s[key] not in allowed:raise ValueError('Invalid performance layer '+key)
+        s['pretyped']=raw.get('pretyped',False)
+        if not isinstance(s['pretyped'],bool):raise ValueError('pretyped must be boolean')
         s['intensity']=float(raw.get('intensity',.7))
         if not math.isfinite(s['intensity']) or not 0<=s['intensity']<=1:raise ValueError('Emotion intensity must be 0–1')
         s['ambient_start']=float(raw.get('ambient_start',ambient_cursor))

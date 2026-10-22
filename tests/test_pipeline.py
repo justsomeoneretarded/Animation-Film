@@ -256,6 +256,9 @@ class RealTimeDirectionTests(unittest.TestCase):
         self.assertEqual(text_count('Hello.',1,'send'),6)
         self.assertEqual(text_count('An existing draft.',.1,'dismiss'),18)
         self.assertEqual(text_count('An existing draft.',.8,'dismiss'),0)
+        from storyfilm.motion import prop_count,send_time
+        self.assertEqual(prop_count(dict(action='send',pretyped=True,prop_text='Already typed.'),0),14)
+        self.assertEqual(send_time('Already typed.',True),.7)
     def test_phone_proportions_and_send_contact(self):
         from storyfilm.motion import PHONE_BOUNDS,send_time,text_finished,frame_state
         x,y,r,b=PHONE_BOUNDS;self.assertLess((r-x)/(b-y),.49)

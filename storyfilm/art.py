@@ -5,7 +5,7 @@ Geometry is authored in 960x540 logical units; every path and stroke is drawn at
 """
 import math
 import random
-from .motion import text_count, send_time, text_finished, PHONE_BOUNDS
+from .motion import text_count, send_time, text_finished, prop_count, PHONE_BOUNDS
 from functools import lru_cache
 from PIL import Image, ImageDraw, ImageFont, ImageFilter
 
@@ -91,10 +91,10 @@ def insert_shot(im,scene,gender,t,progress):
         d.box(PHONE_BOUNDS,'#182029','#899397',3,r=22)
         d.box((399,78,561,442),'#e9e9e1',r=16)
         d.box((455,84,505,92),'#20272c',r=4)
-        received=scene['action']=='receive';sent=scene['action']=='send' and t>=send_time(text)
+        received=scene['action']=='receive';sent=scene['action']=='send' and t>=send_time(text,scene.get('pretyped',False))
         d.text((413,116),'RECEIVED' if received else 'DRAFT' if not sent else 'MESSAGE',13,'#526367')
         d.line([(410,148),(550,148)],'#bbc6c2',1)
-        chars=text_count(text,t,scene['action']);typed=text[:chars].replace('|',' ')
+        chars=prop_count(scene,t);typed=text[:chars].replace('|',' ')
         if scene['action']=='dismiss' and t>.55:typed=''
         lines=wrapped(typed,272,32)
         if typed:
@@ -107,7 +107,7 @@ def insert_shot(im,scene,gender,t,progress):
             if not sent and scene['action']!='dismiss' and chars<len(text):
                 for row in range(2):
                     for key in range(7):d.box((411+key*20,340+row*21,426+key*20,355+row*21),'#c6cbc6',r=3)
-        tap=max(0,1-abs(t-send_time(text))/.20) if scene['action']=='send' else 0
+        tap=max(0,1-abs(t-send_time(text,scene.get('pretyped',False)))/.20) if scene['action']=='send' else 0
         typing=math.sin(t*17)*3 if chars<len(text) and t>.35 and not received else 0
         thumb_x=566-49*tap;thumb_y=358+53*tap+typing
         capsule(d,(586,388),(thumb_x,thumb_y),24,skin)

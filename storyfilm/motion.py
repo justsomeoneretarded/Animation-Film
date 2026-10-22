@@ -21,7 +21,11 @@ def text_finished(text,action):
     active=len(text)/rate
     return .35+active+int(active/1.05)*.20
 
-def send_time(text):return text_finished(text,'send')+.35
+def send_time(text,pretyped=False):return .7 if pretyped else text_finished(text,'send')+.35
+
+def prop_count(scene,t):
+    if scene.get('pretyped') and scene['action'] in {'phone','send'}:return len(scene.get('prop_text',''))
+    return text_count(scene.get('prop_text',''),t,scene['action'])
 
 def action_progress(action,t):return max(0,min(1,t/max(.1,ACTION_SECONDS.get(action,1.2))))
 
@@ -34,7 +38,7 @@ def natural_duration(scene):
     if scene.get('shot')=='reaction':return 1.8
     if scene.get('shot')=='insert':
         read=1.0+len(text.split())/3.2
-        return min(13,max(3.2,read if action=='receive' else text_finished(text,action)+read*.55+.5))
+        return min(13,max(3.2,read if action=='receive' else .7+read if scene.get('pretyped') else text_finished(text,action)+read*.55+.5))
     return {'walk':4.2,'exercise':4.1,'getup':3.2,'fall':2.4,'stand':2.3,'knock':3.,
             'reach':2.5,'sleep':4.,'wipe_tear':3.2,'clench':2.6,'lookaway':2.7,'dismiss':2.8}.get(action,3.)
 
@@ -45,11 +49,11 @@ def frame_state(scene,t,absolute=0,duration=6):
         'emotion_mix':round(max(0,min(1,(t-.15)/.65)),3),'intensity':scene.get('intensity',.7),
         'gaze':scene.get('gaze','phone' if action in {'phone','send','receive','dismiss'} else 'notebook' if action=='write' else 'ground'),
         'gesture':scene.get('gesture','none'),'walk_x':round(walk_position(t),2) if action=='walk' else None},
-        'prop':{'visible_characters':text_count(text,t,action),'sent':action=='send' and t>=send_time(text),
+        'prop':{'visible_characters':prop_count(scene,t),'sent':action=='send' and t>=send_time(text,scene.get('pretyped',False)),
                 'phone_aspect_ratio':round(180/390,4)},
         'environment':{'weather':scene.get('weather','clear'),'phase_seconds':round(ambient,3),
             'clock_seconds':round(scene.get('clock_minutes',22*60)*60+ambient,3),
             'window_rain':scene.get('weather')=='rain' and scene['location'] in {'bedroom','desk'},
             'light':scene.get('time','night')},
-        'audio':{'rain':scene.get('weather')=='rain','clock_tick':scene['location'] in {'bedroom','desk','gym'} and ambient%1<1/12,'foot_contact':action=='walk' and (t%(math.pi/3.6))<1/12,'send_tap':action=='send' and 0<=t-send_time(text)<1/12},
+        'audio':{'rain':scene.get('weather')=='rain','clock_tick':scene['location'] in {'bedroom','desk','gym'} and ambient%1<1/12,'foot_contact':action=='walk' and (t%(math.pi/3.6))<1/12,'send_tap':action=='send' and 0<=t-send_time(text,scene.get('pretyped',False))<1/12},
         'camera':scene.get('shot','wide'),'time':round(absolute,3)}

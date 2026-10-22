@@ -149,7 +149,7 @@ def synthesize(plan, out, engine='piper', cache='.cache/voices', duration_scale=
         action=scene['action']
         step=.87 if action=='walk' else 1.3 if action=='write' else 3.1
         if action in {'walk','write','phone','send','receive','knock','fall','getup'}:
-            events=(np.arange(0,timing['duration']-.2,math.pi/3.6) if action=='walk' else np.arange(.35,min(timing['duration']-.2,text_finished(scene.get('prop_text',''),'write')),.20) if action=='write' else [.8*.48] if action=='fall' else [.04] if action=='receive' else [.72,.90] if action=='knock' else [send_time(scene.get('prop_text',''))] if action=='send' else [])
+            events=(np.arange(0,timing['duration']-.2,math.pi/3.6) if action=='walk' else np.arange(.35,min(timing['duration']-.2,text_finished(scene.get('prop_text',''),'write')),.20) if action=='write' else [.8*.48] if action=='fall' else [.04] if action=='receive' else [.72,.90] if action=='knock' else [send_time(scene.get('prop_text',''),scene.get('pretyped',False))] if action=='send' else [])
             for when in events:
                 if when>=timing['duration'] or when<0:continue
                 start=offset+round(when*sr);n=min(round(sr*.13),len(mix)-start)

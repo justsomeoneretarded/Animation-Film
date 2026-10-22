@@ -65,7 +65,7 @@ def beat_schema(brief):
 
 def compile_events(data,title,brief,lead):
     if set(data)!={f'beat_{i+1}' for i in range(COUNT)}:raise ValueError(f'Write exactly {COUNT} events')
-    scenes=[];counts=Counter();texts=Counter();previous='neutral';passive=0
+    scenes=[];counts=Counter();texts=Counter();previous='neutral';passive=0;draft=''
     for i in range(COUNT):
         raw=data[f'beat_{i+1}'];action,loc=EVENT_CODES[raw['event']];prop=raw['prop_text'].strip()
         if action not in EVENTS or loc not in LOCATIONS or raw['emotion'] not in EMOTIONS:raise ValueError('Unsupported event')
@@ -76,14 +76,18 @@ def compile_events(data,title,brief,lead):
         if action in {'write','exercise','sleep','reach','knock'}:loc={'write':'desk','exercise':'gym','sleep':'bedroom','reach':'street','knock':'street'}[action]
         if action in {'walk','fall','getup'} and loc not in {'street','park','rooftop'}:raise ValueError('Stage walking/falling/getting up outdoors')
         if action in {'sit','stand'} and loc not in {'bedroom','desk','park'}:raise ValueError('Sitting/standing needs furniture')
+        pretyped=action in {'phone','send'} and prop==draft and bool(draft)
+        if action=='dismiss' and draft:prop=draft
         if action in OBJECTS:
-            if not prop:raise ValueError('Object actions need exact words')
+            if not prop or not prop.strip('-_. '):raise ValueError('Object actions need exact words')
             texts[prop.casefold()]+=1
             if texts[prop.casefold()]>2:raise ValueError('Repeated text without new information; change the message or event')
         else:prop=''
+        if action=='phone':draft=prop
+        elif action in {'send','dismiss'}:draft=''
         if not 8<=len(raw.get('change',''))<=100:raise ValueError('Every event needs a concrete change in stakes, information or behavior')
         emotion=raw['emotion'];low=emotion in {'hurt','sad','ashamed','worried'}
-        s=dict(location=loc,action=action,emotion=emotion,emotion_from=previous,prop_text=prop,
+        s=dict(pretyped=pretyped,location=loc,action=action,emotion=emotion,emotion_from=previous,prop_text=prop,
             event=EVENTS[action]+(' Text: '+prop if prop else ''),change=raw['change'],
             shot='insert' if action in OBJECTS else 'close' if action in {'wipe_tear','clench','lookaway'} else 'wide',
             gesture=('clench' if emotion=='angry' else 'fidget' if emotion in {'worried','ashamed'} else 'none') if action not in OBJECTS else 'none',
@@ -95,7 +99,7 @@ def compile_events(data,title,brief,lead):
         # Only consequential object events get reaction coverage; never an obligatory triplet.
         if i%2==1 and i<COUNT-1 and action not in {'fall','getup','sleep'}:
             pose='phone' if action in OBJECTS-{'write'} else 'sit' if action=='write' or action=='sit' else 'idle'
-            reaction={**s,'action':pose,'shot':'reaction','prop_text':'','event':'Reacts to the preceding event.',
+            reaction={**s,'action':pose,'shot':'reaction','prop_text':'','pretyped':False,'event':'Reacts to the preceding event.',
                 'duration':1.8,'emotion_from':previous,'gaze':'ground' if low else 'camera','change':'The preceding consequence registers in the face and posture.'}
             scenes.append(reaction)
         previous=emotion
