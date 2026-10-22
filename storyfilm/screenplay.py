@@ -4,9 +4,9 @@ import math
 import hashlib
 import re
 
-ACTIONS={'idle','walk','sit','sleep','phone','receive','send','write','exercise','reach','knock','fall','getup','stand'}
+ACTIONS={'idle','walk','sit','sleep','phone','receive','send','write','exercise','reach','knock','fall','getup','stand','lookaway','clench','wipe_tear','dismiss'}
 LOCATIONS={'bedroom','desk','street','park','gym','rooftop'}
-EMOTIONS={'sad','worried','tired','neutral','determined','happy'}
+EMOTIONS={'sad','worried','tired','neutral','determined','happy','hurt','angry','ashamed','relieved'}
 SHOTS={'wide','close','reaction','insert'}
 SHADOWS={'none','loom','shrink','crack'}
 
@@ -14,13 +14,13 @@ def validate_screenplay(plan,title,brief,lead):
     if lead not in {'male','female'}:raise ValueError('Invalid lead character')
     scenes=plan.get('scenes')
     if not isinstance(scenes,list) or not 4<=len(scenes)<=48:raise ValueError('Screenplay needs 4–48 shots')
-    out=[];room_states={}
+    out=[];room_states={};ambient_cursor=0
     for i,raw in enumerate(scenes):
         s={}
         for key,allowed,default in [('location',LOCATIONS,None),('action',ACTIONS,None),('emotion',EMOTIONS,None),('emotion_from',EMOTIONS,raw.get('emotion')),('shot',SHOTS,'wide'),('shadow',SHADOWS,'none'),('time',{'night','dawn','day'},'night'),('state',{'normal','clutter'},'normal')]:
             s[key]=raw.get(key,default)
             if s[key] not in allowed:raise ValueError(f'Shot {i+1}: invalid {key}={s[key]}')
-        for key,limit in [('caption',120),('dialogue',100),('shadow_text',70),('prop_text',140),('hud',40),('event',500),('voiceover',120)]:
+        for key,limit in [('caption',120),('dialogue',100),('shadow_text',70),('prop_text',140),('hud',40),('event',500),('voiceover',120),('change',140)]:
             value=raw.get(key,'')
             if not isinstance(value,str) or len(value)>limit:raise ValueError(f'Shot {i+1}: {key} too long or not text')
             s[key]=' '.join(value.split())
@@ -31,8 +31,8 @@ def validate_screenplay(plan,title,brief,lead):
         if not s['event']:raise ValueError(f'Shot {i+1} needs a concrete event')
         if len(s['caption'].split())>18:raise ValueError('Caption must be at most 18 words; let the acting carry the scene')
         s['duration']=float(raw.get('duration',7))
-        if not math.isfinite(s['duration']) or not 2<=s['duration']<=14:raise ValueError('Each shot must last 2–14 seconds')
-        if s['shot']=='insert' and s['action'] not in {'phone','receive','send','write'}:raise ValueError('Insert requires an object interaction')
+        if not math.isfinite(s['duration']) or not 1.25<=s['duration']<=14:raise ValueError('Each shot must last 1.25–14 seconds')
+        if s['shot']=='insert' and s['action'] not in {'phone','receive','send','write','dismiss'}:raise ValueError('Insert requires an object interaction')
         if s['shot']=='insert' and not s['prop_text']:raise ValueError('Object insert needs exact readable prop_text')
         if s['action']=='write' and s['location']!='desk':raise ValueError('Writing needs the desk and notebook')
         if s['action']=='exercise' and s['location']!='gym':raise ValueError('Barbell action needs the gym')
@@ -48,13 +48,23 @@ def validate_screenplay(plan,title,brief,lead):
             if room_states.get(s['location'])=='clutter':s['state']='clutter'
             room_states[s['location']]=s['state']
         if s['shadow']=='none' and s['shadow_text']:raise ValueError('Shadow dialogue requires a visible shadow')
+        for key,allowed,default in [('gaze',{'phone','notebook','window','ground','camera','door'},'phone' if s['action'] in {'phone','send','receive','dismiss'} else 'notebook' if s['action']=='write' else 'ground'),('gesture',{'none','fidget','clench','wipe_tear'},'none')]:
+            s[key]=raw.get(key,default)
+            if s[key] not in allowed:raise ValueError('Invalid performance layer '+key)
+        s['intensity']=float(raw.get('intensity',.7))
+        if not math.isfinite(s['intensity']) or not 0<=s['intensity']<=1:raise ValueError('Emotion intensity must be 0–1')
+        s['ambient_start']=float(raw.get('ambient_start',ambient_cursor))
+        s['clock_minutes']=float(raw.get('clock_minutes',22*60 if s['time']=='night' else 6*60 if s['time']=='dawn' else 10*60))
+        if not all(math.isfinite(s[k]) and s[k]>=0 for k in ('ambient_start','clock_minutes')):raise ValueError('Invalid environment timing')
+        ambient_cursor+=s['duration']
         s['narration']=s['voiceover'] # compatibility only; captions are separate
         out.append(s)
     target=float(plan.get('target_seconds',210))
     if not math.isfinite(target) or not 180<=target<=240:raise ValueError('Film must last 180–240 seconds')
+    if plan.get('pacing')=='natural' and abs(target-sum(s['duration'] for s in out))>.01:raise ValueError('Natural pacing cannot stretch the action plan')
     # Timing needs enough distinct material; do not turn 4 tiny shots into minutes.
     if target/sum(s['duration'] for s in out)>1.35:raise ValueError('Not enough acted material for the requested runtime')
-    return dict(version=4,mode='text-led',title=title,brief=brief,character=lead,scenes=out,target_seconds=target,writer=plan.get('writer','shot-screenplay-v4'))
+    return dict(version=plan.get('version',4),pacing=plan.get('pacing','proportional'),mode='text-led',title=title,brief=brief,character=lead,scenes=out,target_seconds=target,writer=plan.get('writer','shot-screenplay-v4'))
 
 
 def write_screenplay(model,title,brief,lead,diagnostics_path=None):

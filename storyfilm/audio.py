@@ -94,7 +94,7 @@ def synthesize(plan, out, engine='piper', cache='.cache/voices', duration_scale=
     for i,(scene,samples) in enumerate(zip(plan['scenes'],prepared)):
         lead=int(.65*sr)
         if text_led:
-            duration=scene['duration']/sum(s['duration'] for s in plan['scenes'])*target*duration_scale
+            duration=scene['duration']*duration_scale if plan.get('pacing')=='natural' else scene['duration']/sum(s['duration'] for s in plan['scenes'])*target*duration_scale
         elif target:
             # Allocate pauses proportionally; final frame absorbs rounding.
             remaining=max(0,target-total_speech/sr)
@@ -129,6 +129,7 @@ def synthesize(plan, out, engine='piper', cache='.cache/voices', duration_scale=
         # Duck the score under narration, using a smooth block envelope.
         energy=float(np.sqrt(np.mean(narration[start:stop]**2)))
         mix[start:stop]+=pad*(.5 if energy>.015 else 1)
+    from .motion import send_time, text_finished
     # Deterministic scene foley: feet, pencil, phone taps, outdoor air and birds.
     rng=np.random.default_rng(42)
     for scene,timing in zip(plan['scenes'],timings):
@@ -138,11 +139,19 @@ def synthesize(plan, out, engine='piper', cache='.cache/voices', duration_scale=
             noise=rng.normal(0,1,length)
             air=np.convolve(noise,np.ones(90)/90,mode='same')*.014
             mix[offset:end]+=air
+        if scene.get('weather')=='rain':
+            mix[offset:end]+=rng.normal(0, .0035 if scene['location'] in {'bedroom','desk'} else .008,length)
+        if scene['location'] in {'bedroom','desk','gym'}:
+            phase=scene.get('ambient_start',0)
+            for when in np.arange(math.ceil(phase)-phase,timing['duration'],1):
+                pos=offset+round(when*sr);n=min(360,end-pos)
+                if n>0:mix[pos:pos+n]+=.007*np.sin(2*np.pi*1600*np.arange(n)/sr)*np.exp(-np.arange(n)/70)
         action=scene['action']
         step=.87 if action=='walk' else 1.3 if action=='write' else 3.1
         if action in {'walk','write','phone','send','receive','knock','fall','getup'}:
-            events=(np.arange(0,timing['duration']-.2,math.pi/3.6) if action=='walk' else np.arange(timing['duration']*.28,timing['duration']*.77,.45) if action=='write' else [timing['duration']*.48] if action=='fall' else [.04] if action=='receive' else [timing['duration']*.58,timing['duration']*.66] if action=='knock' else [timing['duration']*.72] if action=='send' else [])
+            events=(np.arange(0,timing['duration']-.2,math.pi/3.6) if action=='walk' else np.arange(.35,min(timing['duration']-.2,text_finished(scene.get('prop_text',''),'write')),.20) if action=='write' else [.8*.48] if action=='fall' else [.04] if action=='receive' else [.72,.90] if action=='knock' else [send_time(scene.get('prop_text',''))] if action=='send' else [])
             for when in events:
+                if when>=timing['duration'] or when<0:continue
                 start=offset+round(when*sr);n=min(round(sr*.13),len(mix)-start)
                 tt=np.arange(n)/sr
                 if action=='walk':sound=(rng.normal(0,1,n)*.022+np.sin(2*np.pi*91*tt)*.04)*np.exp(-tt*38)

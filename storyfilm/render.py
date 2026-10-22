@@ -7,6 +7,7 @@ from pathlib import Path
 from PIL import Image, ImageDraw
 from .planner import ai_plan, template_plan, validate, MODEL_ID
 from .audio import synthesize
+from .motion import frame_state, ACTION_SECONDS
 from .art import frame, character, font, wrapped, W, H
 
 
@@ -72,6 +73,7 @@ def render_video(plan,timings,out,fps=12,height=1080):
              '-vf',f'scale={width}:{height}:flags=lanczos','-c:v','libx264','-preset','fast',
              '-crf','20','-pix_fmt','yuv420p','-c:a','aac','-b:a','160k','-shortest','-movflags','+faststart',str(video)]
     process=subprocess.Popen(command,stdin=subprocess.PIPE)
+    frame_directions=(out/'frames.jsonl').open('w')
     try:
         for i,(scene,timing) in enumerate(zip(plan['scenes'],timings)):
             n=round(timing['duration']*fps)
@@ -79,11 +81,14 @@ def render_video(plan,timings,out,fps=12,height=1080):
                 t=j/fps;absolute=timing['start']+t
                 subtitle='' if plan.get('mode')=='text-led' else next((s for a,b,s in entries if a<=absolute<b),'')
                 im=frame(scene,plan['character'],plan['title'],t,timing['duration'],i,len(timings),subtitle)
+                state=frame_state(scene,t,absolute,timing['duration']);state.update(frame=round(absolute*fps),scene=i+1)
+                frame_directions.write(json.dumps(state,separators=(',',':'))+'\n')
                 process.stdin.write(im.tobytes())
             print(f'Rendered scene {i+1}/{len(timings)}',flush=True)
     except BaseException:
         process.kill();process.wait();raise
     finally:
+        frame_directions.close()
         if process.stdin and not process.stdin.closed:
             process.stdin.close()
     if process.wait()!=0:
@@ -138,7 +143,9 @@ def main():
         delta=cursor-timing['start']
         timing['start']=cursor;timing['speech_start']+=delta
         timing['duration']=round(timing['duration']*args.fps)/args.fps
+        plan['scenes'][timing['scene']]['ambient_start']=timing['start']
         cursor+=timing['duration']
+    (args.out/'story.json').write_text(json.dumps(plan,indent=2,ensure_ascii=False))
     video=render_video(plan,timings,args.out,args.fps,args.height)
     report={'planner':source,'model':args.model if source=='ai' else None,'voice':args.voice,
             'preview':args.preview,'character':plan['character'],'duration_seconds':cursor,
@@ -146,7 +153,7 @@ def main():
             'artwork':'Original rounded vector artwork rasterized at native 1920x1080.',
             'writer':plan.get('writer',source),'target_seconds':plan.get('target_seconds'),
             'captions':'Timed screenplay text layers.' if plan.get('mode')=='text-led' else 'Phrase timing estimated from narration duration, not forced alignment.',
-            'engine_version':4,'story_mode':plan.get('mode','legacy-narrated')}
+            'engine_version':5,'story_mode':plan.get('mode','legacy-narrated')}
     timeline=[]
     for scene,timing in zip(plan['scenes'],timings):
         timeline.append(dict(start=round(timing['start'],3),end=round(timing['start']+timing['duration'],3),**scene))
@@ -154,6 +161,7 @@ def main():
     script=['# '+plan['title'],'',f"{plan['character'].title()} lead · {args.fps} FPS · {cursor:.1f} seconds",'']
     for i,row in enumerate(timeline):
         script.extend([f"## {i+1}. {row['start']:.1f}–{row['end']:.1f}s | {row['location']} | {row.get('shot','wide')}",'',row.get('event',''),'',f"Action: {row['action']}. Emotion: {row.get('emotion_from',row['emotion'])} → {row['emotion']}."])
+        script.extend([f"Story change: {row.get('change','')}",f"Performance: gaze={row.get('gaze')}; gesture={row.get('gesture')}; intensity={row.get('intensity')}. Action runs on its own real-second clock, then holds.",f"Environment: {row.get('time')}, {row.get('weather')}; continuous weather phase starts at {row.get('ambient_start',0):.2f}s. Wall clock runs independently in indoor wide shots.",f"Camera: {row.get('shot')}. Frame-by-frame character, prop and environment directions: frames.jsonl."])
         for key in ['caption','dialogue','shadow_text','prop_text','voiceover']:
             if row.get(key):script.append(f"{key.replace('_',' ').title()}: {row[key]}")
         script.append('')

@@ -1,5 +1,5 @@
 name: General writer acceptance
-# Validate a twelve-event story expanded into 36 motivated shots and meaningful captions and sparse story direction for a female lead.
+# Validate a different title, consequential events and simultaneous frame layers.
 on:
   workflow_dispatch:
   push:
@@ -11,5 +11,5 @@ jobs:
   general:
     uses: ./.github/workflows/make-film.yml
     with:
-      title: The Unfinished Page
-      brief: Female lead. She avoids answering a difficult message in her bedroom. She tries to write the truth in a notebook at her desk but stops. She takes a walk outside, then sits on a park bench. She returns to the message and sends a short honest answer instead of a perfect one. End at the same desk, writing again. Quiet and specific, with no instant transformation.
+      title: The Message I Deleted
+      brief: Female lead. She has ignored messages from her sister, then feels hurt when the invitations stop. She drafts an accusation in her bedroom. Her sister replies that she thought she wanted space. At her desk she writes the excuses she was about to use, then a truthful apology. She walks outside, returns to the phone and admits she wanted her sister to keep asking but never said so. The reply is kind but honest about being hurt. She apologizes without asking to be instantly forgiven. End at her desk writing what she wants to say when they talk tomorrow. One visible human. Rain outside, a ticking wall clock, concrete messages, anger giving way to remorse and cautious relief.

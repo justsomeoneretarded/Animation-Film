@@ -2,6 +2,7 @@
 import math
 from functools import lru_cache
 from PIL import Image, ImageDraw, ImageFilter
+from .motion import action_progress, walk_position, text_count, send_time, text_finished
 from .art import Draw, capsule, jointed, smooth, glow, gradient, wrapped, font, W, H, S
 
 SKIN='#e9dfcb'; SHADE='#b8aa96'; EDGE='#171c24'
@@ -9,7 +10,7 @@ SKIN='#e9dfcb'; SHADE='#b8aa96'; EDGE='#171c24'
 def envelope(p,a,b):return smooth(0,1,(p-a)/max(.001,b-a))
 
 
-def actor(im,x,floor,t,gender='male',action='idle',emotion='neutral',scale=1.,shadow=False,progress=.5,walk_speed=24,emotion_from=None,seated=None):
+def actor(im,x,floor,t,gender='male',action='idle',emotion='neutral',scale=1.,shadow=False,progress=.5,walk_speed=24,emotion_from=None,seated=None,gaze_target=None,gesture='none',intensity=.7,send_at=1.2,write_until=3.):
     """A round silhouette, integrated short neck and contact-aware pose phases.
 
     Feet are planted except during explicit walk/fall/recovery actions. Local
@@ -32,10 +33,10 @@ def actor(im,x,floor,t,gender='male',action='idle',emotion='neutral',scale=1.,sh
     walk=action=='walk';phase=t*3.6
     bob=-abs(math.sin(phase))*3 if walk else 0
     # Emotional posture changes once per shot, with a restrained breath between actions.
-    mood=envelope(p,.22,.58)
-    start_low=emotion_from in {'sad','tired','worried'} if emotion_from else emotion in {'sad','tired','worried'}
-    end_low=emotion in {'sad','tired','worried'}
-    hunch=(float(start_low)*(1-mood)+float(end_low)*mood)
+    mood=envelope(t,.15,.8)
+    start_low=emotion_from in {'sad','tired','worried','hurt','ashamed'} if emotion_from else emotion in {'sad','tired','worried','hurt','ashamed'}
+    end_low=emotion in {'sad','tired','worried','hurt','ashamed'}
+    hunch=(float(start_low)*(1-mood)+float(end_low)*mood)*(.6+.4*intensity)
     lean+=hunch*7
     bob+=math.sin(t*1.7)*.65
     hip=(200+lean*.36,352+crouch+(20 if sitting else 0)+bob)
@@ -77,11 +78,11 @@ def actor(im,x,floor,t,gender='male',action='idle',emotion='neutral',scale=1.,sh
     if sitting:
         left=[(sx-45,sy+8),(sx-65,sy+60),(sx-5,sy+79)]
         right=[(sx+45,sy+8),(sx+62,sy+61),(sx+31,sy+72)]
-    if action in {'phone','send','receive'}:
+    if action in {'phone','send','receive','dismiss'}:
         raise_hand=envelope(p,.08,.30)
         left[-1]=(sx-5,sy+87-raise_hand*31);right[-1]=(sx+30,sy+79-raise_hand*29)
     if action=='write':
-        stroke=math.sin(t*8)*4 if .28<p<.78 else 0
+        stroke=math.sin(t*8)*4 if .25<t<write_until else 0
         left[-1]=(sx-8,sy+70);right[-1]=(sx+46+stroke,sy+62)
     if action in {'reach','knock'}:
         reach=envelope(p,.18,.48);tap=math.sin((p-.56)*math.pi*24)*3 if action=='knock' and .56<p<.78 else 0
@@ -93,13 +94,19 @@ def actor(im,x,floor,t,gender='male',action='idle',emotion='neutral',scale=1.,sh
         amt=crouch/84
         left=[(sx-45,sy+8),(sx-65,sy+75),(sx-70,sy+115+amt*35)]
         right=[(sx+45,sy+8),(sx+55,sy+74),(sx+62,sy+115+amt*35)]
+    g=action if action in {'wipe_tear','clench','lookaway'} else gesture
+    touch=envelope(t,.12,.65)*(1-envelope(t,1.25,1.65))
+    if g=='wipe_tear':right=[(sx+45,sy+8),(sx+80,sy-15),(sx+55*(1-touch)+(hx+29-sx)*touch,sy+100*(1-touch)+(hy+15-sy)*touch)]
+    if g=='clench':
+        right[-1]=(sx+48,sy+98-8*touch);left[-1]=(sx-48,sy+98-8*touch)
+    if g=='fidget':right[-1]=(right[-1][0]+math.sin(t*15)*2.2,right[-1][1])
     for arm in (left,right):
         jointed(d,arm,29,cloth);ax,ay=arm[-1]
         d.ellipse((ax-16,ay-7,ax+16,ay+21),SKIN,EDGE,2)
-    if action in {'phone','send','receive'}:
-        ax,ay=left[-1];d.box((ax+1,ay-34,ax+37,ay+24),'#202932','#87949c',2,r=6)
-        d.box((ax+6,ay-27,ax+32,ay+13),'#82a9b4',r=3)
-        if action=='send' and .65<p<.83:d.ellipse((ax+23,ay+4,ax+38,ay+18),SKIN,EDGE,1)
+    if action in {'phone','send','receive','dismiss'}:
+        ax,ay=left[-1];d.box((ax+3,ay-36,ax+31,ay+24),'#202932','#87949c',2,r=6)
+        d.box((ax+7,ay-29,ax+27,ay+15),'#82a9b4',r=3)
+        if action=='send' and send_at-.18<t<send_at+.18:d.ellipse((ax+23,ay+4,ax+38,ay+18),SKIN,EDGE,1)
     if action=='write':
         ax,ay=right[-1];d.line([(ax+7,ay-21),(ax-9,ay+26)],'#bfa278',4)
     if action=='exercise':
@@ -108,26 +115,36 @@ def actor(im,x,floor,t,gender='male',action='idle',emotion='neutral',scale=1.,sh
     d.ellipse((hx-65,hy-69,hx+66,hy+65),SHADE,EDGE,3)
     d.ellipse((hx-63,hy-68,hx+60,hy+59),SKIN)
     d.path([('M',hx-48,hy-41),('C',hx-35,hy-58,hx-8,hy-62,hx+12,hy-57)],None,'#f6eedc',4)
-    current=emotion_from if emotion_from and p<.38 else emotion
-    tired=current in {'sad','tired'}; worried=current=='worried'
+    current=emotion_from if emotion_from and t<.38 else emotion
+    tired=current in {'sad','tired','hurt','ashamed'}; worried=current=='worried'
     eyes_y=hy+7+(4 if tired else 0)+(3 if action in {'phone','send','receive','write'} else 0)
-    gaze=(2+4*envelope(p,.08,.3)) if action in {'phone','receive','send','write','reach','knock'} else 2
+    gaze=(2+4*envelope(p,.08,.3)) if action in {'phone','receive','send','dismiss','write','reach','knock'} else 2
+    if gaze_target=='window':gaze=-6
+    elif gaze_target=='ground':eyes_y+=4;gaze=-1
+    elif gaze_target=='door':gaze=7
+    elif gaze_target=='camera':gaze=0
+    if action=='lookaway':gaze=-7*envelope(t,.12,.65)
     blink=(t%4.7)>.0 and (t%4.7)<.12
     if action=='sleep':blink=True
     for ex in (hx-25,hx+25):
         if blink:d.line([(ex-7,eyes_y+1),(ex+7,eyes_y+1)],EDGE,2)
         else:d.ellipse((ex-5+gaze,eyes_y-7,ex+5+gaze,eyes_y+(4 if tired else 7)),EDGE)
         if tired:d.path([('M',ex-11,eyes_y+11),('C',ex-4,eyes_y+16,ex+7,eyes_y+17,ex+12,eyes_y+10)],None,'#b4a395',1.5)
-    if current in {'sad','worried','tired'}:
+    if current in {'sad','worried','tired','hurt','ashamed'}:
         d.line([(hx-40,hy-9),(hx-12,hy-17)],EDGE,3);d.line([(hx+12,hy-17),(hx+40,hy-9)],EDGE,3)
-    elif current=='determined':
+    elif current in {'determined','angry'}:
         d.line([(hx-40,hy-18),(hx-12,hy-9)],EDGE,3);d.line([(hx+12,hy-9),(hx+40,hy-18)],EDGE,3)
     else:
         d.line([(hx-39,hy-15),(hx-13,hy-16)],EDGE,2);d.line([(hx+13,hy-16),(hx+39,hy-15)],EDGE,2)
-    if current=='happy':d.path([('M',hx-13,hy+35),('C',hx,hy+47,hx+10,hy+42,hx+19,hy+32)],None,EDGE,3)
+    if current=='relieved':d.path([('M',hx-11,hy+37),('C',hx,hy+43,hx+9,hy+42,hx+15,hy+36)],None,EDGE,2)
+    elif current=='happy':d.path([('M',hx-13,hy+35),('C',hx,hy+47,hx+10,hy+42,hx+19,hy+32)],None,EDGE,3)
     elif worried:d.ellipse((hx-5,hy+34,hx+9,hy+43),EDGE)
     elif tired:d.path([('M',hx-15,hy+40),('C',hx-3,hy+32,hx+10,hy+33,hx+18,hy+39)],None,EDGE,2.5)
     else:d.line([(hx-13,hy+37),(hx+16,hy+37)],EDGE,2.5)
+    if current in {'hurt','ashamed'}:
+        tear=envelope(t,.4,1.3)*14*intensity
+        d.line([(hx+29,eyes_y+13),(hx+30,eyes_y+13+tear)],'#8bafb9',2)
+    if current=='angry':d.line([(hx-13,hy+39),(hx+18,hy+39)],EDGE,4)
     if gender=='female':
         d.path([('M',hx-66,hy-7),('C',hx-74,hy-72,hx-17,hy-91,hx+29,hy-68),('C',hx+63,hy-55,hx+68,hy-24,hx+62,hy+3),('C',hx+37,hy-5,hx+23,hy-26,hx+20,hy-47),('C',hx-8,hy-26,hx-37,hy-39,hx-66,hy-7)],'#453d42',EDGE,2)
     if action=='sleep':
@@ -225,7 +242,7 @@ def label(im,text,y=70,color='#f4f1e5',size=36,width=1540,bubble=False,cx=None):
 
 
 def stage(scene,gender,title,t,duration,index,total,subtitle=''):
-    p=t/max(.001,duration);loc=scene['location'];act=scene['action'];day=scene.get('time','night')
+    p=t/max(.001,duration);ambient=scene.get('ambient_start',0)+t;loc=scene['location'];act=scene['action'];day=scene.get('time','night')
     im=set_design(loc,day,scene.get('state','normal')).copy()
     weather=scene.get('weather','rain' if loc in {'bedroom','desk'} and day=='night' else 'clear')
     outdoors=loc in {'street','park','rooftop'}
@@ -233,15 +250,15 @@ def stage(scene,gender,title,t,duration,index,total,subtitle=''):
         sd=Draw(im)
         sd.path([('M',0,457),('C',220,447,320,470,480,456),('C',640,448,760,467,960,453),('L',960,464),('L',0,468),('L',0,457)],'#bcc8cf')
         for k in range(55):
-            xx=(k*167+t*(16+k%4*7))%960;yy=(k*79+t*(21+k%5*4))%540
+            xx=(k*167+ambient*(16+k%4*7))%960;yy=(k*79+ambient*(21+k%5*4))%540
             r=1+k%3*.55;sd.ellipse((xx-r,yy-r,xx+r,yy+r),'#c8d4dd')
     elif weather=='rain' and outdoors:
         sd=Draw(im)
         for k in range(50):
-            xx=(k*137-t*26)%960;yy=(k*83+t*170)%540
+            xx=(k*137-ambient*26)%960;yy=(k*83+ambient*170)%540
             sd.line([(xx,yy),(xx-4,yy+15)],'#8597a8',.8)
     shot=scene.get('shot','wide');scale=.83;x=490;floor=473
-    if act=='walk':x=350+p*260;scale=.8
+    if act=='walk':x=walk_position(t);scale=.8
     if act in {'knock','reach'}:x=252;scale=.83
     if loc=='desk':x=480;floor=487;scale=.82
     if loc=='park' and act in {'sit','phone','send','receive'}:floor=475;scale=.88
@@ -250,21 +267,30 @@ def stage(scene,gender,title,t,duration,index,total,subtitle=''):
     shadow_actor(im,x+151,floor,t,p,sh,scene.get('shadow_size',1.))
     d=Draw(im);d.ellipse((x-67,floor-4,x+70,floor+12),'#19212a')
     seated=act in {'sit','phone','send','receive','write'} and loc in {'park','bedroom','desk'}
-    pose=actor(im,x,floor,t,gender,act,scene['emotion'],scale,progress=p,walk_speed=260/max(.01,duration)/scale,emotion_from=scene.get('emotion_from'),seated=seated)
+    pose=actor(im,x,floor,t,gender,act,scene['emotion'],scale,progress=action_progress(act,t),walk_speed=76/scale,emotion_from=scene.get('emotion_from'),seated=seated,gaze_target=scene.get('gaze'),gesture=scene.get('gesture','none'),intensity=scene.get('intensity',.7),send_at=send_time(scene.get('prop_text','')),write_until=text_finished(scene.get('prop_text',''),'write'))
     d=Draw(im)
     if loc=='desk':
         d.box((342,381,804,400),'#a38b6d',EDGE,3,r=5)
         for xx in (362,774):d.box((xx,400,xx+12,506),'#574e44',EDGE,2)
         d.path([('M',451,374),('L',569,374),('L',584,382),('L',444,382),('L',451,374)],'#ede1c7',EDGE,1)
         if act=='write' and isinstance(pose,dict):
-            amount=envelope(p,.28,.78)
+            amount=text_count(scene.get('prop_text',''),t,'write')/max(1,len(scene.get('prop_text','')))
             if amount:d.line([(461,377),(461+amount*72,377)],'#53575a',.6)
             # Paper is in front of the body; the pencil must be in front of paper.
             a,b=pose['pen'];d.line([a,b],'#bfa278',4*scale)
             d.line([b,(b[0]-scale,b[1]+2*scale)],EDGE,scale)
     if loc in {'bedroom','desk'} and weather=='rain':
         for k in range(10):
-            xx=130+(k*31)%145;yy=120+(k*47+t*32)%178;d.line([(xx,yy),(xx-2,yy+10)],'#718899',.8)
+            xx=130+(k*31)%145;yy=120+(k*47+ambient*32)%178;d.line([(xx,yy),(xx-2,yy+10)],'#718899',.8)
+    if loc=='bedroom':
+        secs=int(scene.get('clock_minutes',22*60)*60+ambient);d.box((805,355,866,382),'#151a21','#656e77',2,r=5);d.text((810,361),f'{secs//3600%24:02d}:{secs//60%60:02d}',13,'#e1a092')
+    if loc in {'bedroom','desk','gym'}:
+        seconds=scene.get('clock_minutes',22*60)*60+ambient
+        cx,cy=815,143;d.ellipse((cx-31,cy-31,cx+31,cy+31),'#d8d4c9',EDGE,2)
+        for k in range(12):
+            a=k*math.pi/6;d.line([(cx+26*math.sin(a),cy-26*math.cos(a)),(cx+29*math.sin(a),cy-29*math.cos(a))],EDGE,1)
+        for angle,length,color,width in [(seconds/43200*2*math.pi,15,EDGE,2.5),(seconds/3600*2*math.pi,23,EDGE,1.5),(int(seconds)/60*2*math.pi,25,'#a2534e',.8)]:
+            d.line([(cx,cy),(cx+length*math.sin(angle),cy-length*math.cos(angle))],color,width)
     # Framing is a screenplay choice, never an automatic halfway cut.
     if shot in {'close','reaction'}:
         z=1.85;cw,ch=W/z,H/z;cx=x*S;cy=229*S
@@ -272,12 +298,12 @@ def stage(scene,gender,title,t,duration,index,total,subtitle=''):
         im=im.crop((round(left),round(top),round(left+cw),round(top+ch))).resize((W,H),Image.Resampling.LANCZOS)
     if shot=='insert':
         from .art import insert_shot
-        detail=dict(scene,action=act if act in {'phone','send','receive'} else 'write')
+        detail=dict(scene,action=act if act in {'phone','send','receive','dismiss'} else 'write')
         # Receive is already readable; send reveals typed words, then SENT.
         ip=1 if act=='receive' else p
         im=insert_shot(im,detail,gender,t,ip)
     caption=scene.get('caption',subtitle)
-    if .08<=p<=.91:label(im,caption,80,size=38)
+    if .08<=p<=.91:label(im,caption,930 if shot=='insert' else 60,size=36)
     text=scene.get('dialogue','')
     if .25<=p<=.88:label(im,text,810,size=36,bubble=True)
     if .18<=p<=.88:label(im,scene.get('shadow_text',''),230,color='#ed8279',size=32,width=560,cx=1580)

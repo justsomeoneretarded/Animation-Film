@@ -5,6 +5,7 @@ Geometry is authored in 960x540 logical units; every path and stroke is drawn at
 """
 import math
 import random
+from .motion import text_count, send_time, PHONE_BOUNDS
 from functools import lru_cache
 from PIL import Image, ImageDraw, ImageFont, ImageFilter
 
@@ -83,40 +84,39 @@ def insert_shot(im,scene,gender,t,progress):
     im=im.filter(ImageFilter.GaussianBlur(18));veil=Image.new('RGBA',im.size,(12,22,33,70));im.alpha_composite(veil)
     d=Draw(im);skin='#e5d7bf';sleeve='#7f8d93' if gender=='male' else '#a18e98'
     text=scene.get('prop_text','')
-    if scene['action'] in {'phone','send','receive'}:
-        # A held phone, a moving thumb, and progressive message entry.
-        capsule(d,(310,558),(364,369),57,sleeve)
-        capsule(d,(654,552),(610,360),57,sleeve)
-        d.ellipse((349,285,409,409),skin,INK,3);d.ellipse((565,280,628,413),skin,INK,3)
-        d.box((375,90,598,450),'#17283b','#9dabb4',4,r=24)
-        d.box((388,109,585,429),'#e4e7df' if text else '#496a85',r=15)
-        d.box((451,100,521,108),'#263a50',r=3)
-        d.text((409,139),('RECEIVED' if scene.get('action')=='receive' else 'MESSAGE') if text else 'FOR YOU',14,'#476473' if text else '#e0ece9')
-        if text:
-            d.line([(402,171),(572,171)],'#adbbb8',1)
-            chars=len(text) if scene.get('action')=='receive' else round(len(text)*smooth(0,1,progress*1.8))
-            typed=text[:chars].replace('|',' ')
-            lines=wrapped(typed,285,28)
-            d.box((402,211,572,238+len(lines)*21),'#bacfc8',r=11)
-            for j,line in enumerate(lines):d.text((412,223+j*21),line,14,'#263e4d')
-            if progress>.72 and scene.get('action')=='send':
-                d.box((485,373,567,405),'#4f7c79',r=11);d.text((501,380),'SENT',13,'#f1f3e6')
-        else:
-            for k in range(3):
-                y=186+k*91-(t*15)%65
-                d.box((402,y,570,y+69),['#7996a1','#a5b5b4','#b9a893'][k%3],r=8)
-                d.ellipse((420,y+13,448,y+41),'#dce3d7')
-                d.line([(462,y+23),(551,y+23)],'#e2e7da',3)
-                d.line([(419,y+53),(544,y+53)],'#e2e7da',2)
-        tap=smooth(0,1,(progress-.62)/.10)*(1-smooth(0,1,(progress-.78)/.14)) if scene.get('action')=='send' else 0
-        thumb_x=574-48*tap;thumb_y=348+41*tap
-        capsule(d,(605,383),(thumb_x,thumb_y),27,skin)
-        capsule(d,(369,369),(397,319),25,skin)
+    if scene['action'] in {'phone','send','receive','dismiss'}:
+        capsule(d,(320,558),(375,370),51,sleeve)
+        capsule(d,(640,552),(586,365),51,sleeve)
+        d.ellipse((355,289,405,413),skin,INK,3);d.ellipse((551,284,604,417),skin,INK,3)
+        d.box(PHONE_BOUNDS,'#182029','#899397',3,r=22)
+        d.box((399,78,561,442),'#e9e9e1',r=16)
+        d.box((455,84,505,92),'#20272c',r=4)
+        received=scene['action']=='receive';sent=scene['action']=='send' and t>=send_time(text)
+        d.text((413,116),'RECEIVED' if received else 'DRAFT' if not sent else 'MESSAGE',13,'#526367')
+        d.line([(410,148),(550,148)],'#bbc6c2',1)
+        chars=text_count(text,t,scene['action']);typed=text[:chars].replace('|',' ')
+        if scene['action']=='dismiss' and t>.55:typed=''
+        lines=wrapped(typed,272,32)
+        if typed:
+            bottom=min(365,195+len(lines)*23)
+            d.box((408,175,552,bottom),'#bdcfc6',r=9)
+            for j,line in enumerate(lines[:7]):d.text((417,187+j*23),line,16,'#253c43')
+        if not received:
+            d.box((477,397,550,427),'#4f7c79',r=9)
+            d.text((488,404),'SENT' if sent else 'SEND',13,'#f1f3e6')
+            if not sent and scene['action']!='dismiss' and chars<len(text):
+                for row in range(2):
+                    for key in range(7):d.box((411+key*20,340+row*21,426+key*20,355+row*21),'#c6cbc6',r=3)
+        tap=max(0,1-abs(t-send_time(text))/.20) if scene['action']=='send' else 0
+        typing=math.sin(t*17)*3 if chars<len(text) and t>.35 and not received else 0
+        thumb_x=566-49*tap;thumb_y=358+53*tap+typing
+        capsule(d,(586,388),(thumb_x,thumb_y),24,skin)
+        capsule(d,(375,373),(404,323),23,skin)
     else:
         d.box((169,149,791,459),'#b89d7f','#394755',3,r=16)
         d.path([('M',237,181),('L',696,166),('L',731,437),('L',214,442),('L',237,181)],'#f1e7ce','#8b877a',2)
         for yy in range(218,419,28):d.line([(247,yy),(690,yy-8)],'#c5c8b4',1)
-        chars=round(len(text)*smooth(0,1,progress*1.4))
+        chars=text_count(text,t,'write')
         chunks=text[:chars].split('|')
         for j,line in enumerate(chunks):
             for k,wrapped_line in enumerate(wrapped(line,810,34)):

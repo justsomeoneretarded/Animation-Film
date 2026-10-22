@@ -157,53 +157,38 @@ class VisualScreenplayTests(unittest.TestCase):
 
 class GeneralWriterContractTests(unittest.TestCase):
     def test_complete_arc_action_binding_sparse_text_and_checkpoint(self):
-        from storyfilm.visual_writer import write,COUNT
+        from storyfilm.visual_writer import write,COUNT,beat_schema
         class Model:
             def __init__(self):self.calls=[]
             def create_chat_completion(self,**request):
-                self.calls.append(request)
-                required=request['response_format']['schema']['required']
-                if 'opening' in required:
-                    data={k:'A specific cause and consequence.' for k in required}
+                self.calls.append(request);required=request['response_format']['schema']['required']
+                if 'relationship' in required:data={k:'A specific cause and consequence.' for k in required}
                 elif 'beat_1' in required:
                     data={}
-                    for i in range(12):
-                        action,location,emotion,prop=[('receive','bedroom','worried',f'Can we talk {i}?'),('phone','bedroom','tired',f'Draft {i}'),('walk','street','worried',''),('write','desk','worried',f'The truth {i}'),('send','park','determined',f'An honest answer {i}'),('sit','park','neutral','')][i%6]
-                        if i==11:action,location,prop='write','desk','Keep writing.'
-                        data[f'beat_{i+1}']=dict(action=action,location=location,emotion=emotion,prop_text=prop)
-                    if len(self.calls)==2:data.pop('beat_12')
-                else:
-                    data=dict(captions=[dict(scene=i,text=t) for i,t in [(1,'The question had waited all night.'),(10,'An easy answer would have been another lie.'),(24,'Perfect was no longer the point.'),(36,'There was room for another sentence.')]],shadows=[dict(scene=2,text='Leave it unanswered.'),dict(scene=20,text='They will misunderstand.')])
+                    for i in range(COUNT):
+                        action,location,emotion,prop=[('receive','bedroom','hurt',f'You stopped answering my invitations {i}.'),('phone','bedroom','angry',f'You forgot about me again {i}.'),('dismiss','bedroom','ashamed',f'That accusation was unfair {i}.'),('write','desk','ashamed',f'I ignored your invitations {i}.'),('stand','desk','determined',''),('walk','street','worried',''),('clench','park','hurt',''),('send','park','relieved',f'I am sorry I did not answer you {i}.')][i%8]
+                        if i==COUNT-1:action,location,prop='write','desk','What I need to say tomorrow.'
+                        data[f'beat_{i+1}']=dict(action=action,location=location,emotion=emotion,prop_text=prop,change='New specific information changes the next decision '+str(i))
+                    if len(self.calls)==2:data.pop('beat_32')
+                else:data=dict(captions=[dict(scene=i,text=t) for i,t in [(1,'The invitations had stopped.'),(10,'An easy answer would have been another lie.'),(24,'That silence had hurt someone else.'),(47,'Tomorrow would require an honest answer.')]],shadows=[dict(scene=2,text='Leave it unanswered.'),dict(scene=20,text='They will misunderstand.')])
                 return {'choices':[{'message':{'content':json.dumps(data)}}]}
         model=Model();brief='She walks outside and sends an honest answer. End at the desk, writing again.'
         with tempfile.TemporaryDirectory() as directory:
-            diagnostic=Path(directory)/'writer.txt'
-            p=write(model,'A completely different title',brief,'female',diagnostic)
-            reused=write(model,'A completely different title',brief,'female',diagnostic)
-            self.assertEqual(reused,p)
-        self.assertEqual(len(model.calls),4);self.assertEqual(len(p['scenes']),36)
-        for i in range(12):
-            if p['scenes'][i*3+1]['action'] in {'stand','walk'}:
-                self.assertEqual(p['scenes'][i*3+2]['action'],'idle')
+            diagnostic=Path(directory)/'writer.txt';p=write(model,'A completely different title',brief,'female',diagnostic)
+            self.assertEqual(write(model,'A completely different title',brief,'female',diagnostic),p)
+        self.assertEqual(len(model.calls),4);self.assertEqual(len(p['scenes']),47)
+        self.assertEqual(p['pacing'],'natural');self.assertAlmostEqual(sum(x['duration'] for x in p['scenes']),p['target_seconds'])
         self.assertEqual(p['scenes'][-1]['action'],'write');self.assertEqual(p['scenes'][-1]['location'],'desk')
-        self.assertEqual(sum(bool(s['caption']) for s in p['scenes']),4)
-        self.assertEqual(sum(bool(s['shadow_text']) for s in p['scenes']),2)
-        self.assertTrue(all('Writes' in s['event'] for s in p['scenes'] if s['action']=='write'))
-        self.assertTrue(all(not s['voiceover'] for s in p['scenes']))
-        from storyfilm.visual_writer import shot_variants,beat_schema
-        variants=shot_variants()
+        self.assertEqual(sum(bool(x['caption']) for x in p['scenes']),4)
+        self.assertEqual(sum(x['shot']!='reaction' for x in p['scenes']),32)
         required=beat_schema(brief)['properties']
-        self.assertEqual(required['beat_10']['properties']['action']['enum'],['send'])
-        self.assertEqual(required['beat_12']['properties']['action']['enum'],['write'])
-        for location,action in [('bedroom','walk'),('gym','write'),('rooftop','sleep'),('street','sit'),('park','knock'),('desk','exercise')]:
-            self.assertFalse(any(location in v['properties']['location']['enum'] and action in v['properties']['action']['enum'] for v in variants))
-        for v in variants:
-            if v['properties']['shot']['enum']==['insert']:self.assertEqual(v['properties']['prop_text']['minLength'],3)
+        self.assertEqual(required['beat_25']['properties']['action']['enum'],['send'])
+        self.assertEqual(required['beat_32']['properties']['action']['enum'],['write'])
     def test_director_rejects_pose_captions_and_repeated_shadow_lines(self):
         from storyfilm.visual_writer import apply_direction
         core=depression_plan('Title','Male lead.')['scenes']
-        core=(core+core)[:36]
-        captions=[dict(scene=i,text='A distinct story meaning '+str(i)) for i in (1,10,20,36)]
+        core=core[:30]
+        captions=[dict(scene=i,text='A distinct story meaning '+str(i)) for i in (1,10,20,30)]
         captions[0]['text']='She writes in her notebook.'
         with self.assertRaises(ValueError):apply_direction(core,dict(captions=captions,shadows=[]),'Title','Male lead.','male')
         captions[0]['text']='The first words she writes are for herself.'
@@ -254,5 +239,34 @@ class DeskContactTests(unittest.TestCase):
             pencil=sum(abs(r-191)<4 and abs(g-162)<4 and abs(b-120)<4 for r,g,b in pixels)
             self.assertGreater(pencil,4)
 
+
+class RealTimeDirectionTests(unittest.TestCase):
+    def test_long_shot_does_not_slow_action_or_typing(self):
+        from storyfilm.motion import text_count,walk_position
+        from storyfilm.staging import stage
+        s=dict(location='street',action='walk',emotion='neutral',weather='clear')
+        a=stage(s,'male','Different title',1.5,5,0,10)
+        b=stage(s,'male','Different title',1.5,12,0,10)
+        self.assertIsNone(ImageChops.difference(a,b).getbbox())
+        self.assertAlmostEqual(walk_position(2)-walk_position(1),76)
+        text='A fairly long message that should never take seconds per letter.'
+        self.assertGreaterEqual(text_count(text,1,'send'),7)
+        self.assertEqual(text_count('Hello.',1,'send'),6)
+    def test_phone_proportions_and_send_contact(self):
+        from storyfilm.motion import PHONE_BOUNDS,send_time,text_finished,frame_state
+        x,y,r,b=PHONE_BOUNDS;self.assertLess((r-x)/(b-y),.49)
+        self.assertGreater(send_time('I am sorry.'),text_finished('I am sorry.','send'))
+        s=dict(action='send',location='bedroom',emotion='ashamed',prop_text='I am sorry.',weather='rain',ambient_start=10)
+        a=frame_state(s,1,11);b=frame_state(s,2,12)
+        self.assertEqual(b['environment']['clock_seconds']-a['environment']['clock_seconds'],1)
+        self.assertEqual(b['environment']['phase_seconds'],12)
+        self.assertIn('gesture',b['character']);self.assertTrue(b['environment']['window_rain'])
+    def test_every_emotion_and_gesture_draws(self):
+        from storyfilm.screenplay import EMOTIONS
+        from storyfilm.staging import stage
+        for emotion in EMOTIONS:
+            for action in ('wipe_tear','clench','lookaway','dismiss'):
+                im=stage(dict(location='bedroom',action=action,emotion=emotion,gesture='fidget'), 'female','Any title',.7,5,0,10)
+                self.assertEqual(im.size,(1920,1080))
 
 if __name__=='__main__':unittest.main()
