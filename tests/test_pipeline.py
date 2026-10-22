@@ -252,6 +252,8 @@ class RealTimeDirectionTests(unittest.TestCase):
         text='A fairly long message that should never take seconds per letter.'
         self.assertGreaterEqual(text_count(text,1,'send'),7)
         self.assertEqual(text_count('Hello.',1,'send'),6)
+        self.assertEqual(text_count('An existing draft.',.1,'dismiss'),18)
+        self.assertEqual(text_count('An existing draft.',.8,'dismiss'),0)
     def test_phone_proportions_and_send_contact(self):
         from storyfilm.motion import PHONE_BOUNDS,send_time,text_finished,frame_state
         x,y,r,b=PHONE_BOUNDS;self.assertLess((r-x)/(b-y),.49)

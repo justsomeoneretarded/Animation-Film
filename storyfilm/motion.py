@@ -10,6 +10,7 @@ WRITE_RATE=15.0
 
 def text_count(text,t,action):
     if action=='receive':return len(text)
+    if action=='dismiss':return len(text) if t<.55 else 0
     # Short pauses between bursts, never seconds spent on one letter.
     elapsed=max(0,t-.35)
     burst=int(elapsed/1.25);active=burst*1.05+min(1.05,elapsed%1.25)
