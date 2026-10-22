@@ -29,6 +29,14 @@ def ending_constraint(brief):
     if re.search(r'writ',tail):action='write';location='desk'
     elif re.search(r'\bsend',tail):action='send'
     elif re.search(r'\bwalk',tail):action='walk'
+    elif re.search(r'\b(?:curl|barbell)',tail):action='exercise';location='gym'
+    elif re.search(r'\bknock',tail):action='knock';location='street'
+    elif re.search(r'\b(?:get|gets|getting) up|rising from the ground',tail):
+        action='getup';location=location if location in {'street','park','rooftop'} else 'street'
+    elif re.search(r'\b(?:sit|sits|sitting|seated)\b|\bbench\b',tail):
+        action='sit';location=location if location in {'bedroom','desk','park'} else 'park'
+    elif re.search(r'\bsleep',tail):action='sleep';location='bedroom'
+    elif re.search(r'\b(?:standing|looking)\b',tail):action='idle'
     return location,action
 
 ALIASES={'phone':'draft_message','send':'send_message','receive':'read_message','dismiss':'delete_draft','write':'write_note','getup':'rise_from_ground','fall':'fall_to_ground','stand':'rise_from_seat'}

@@ -163,19 +163,14 @@ class GeneralWriterContractTests(unittest.TestCase):
             def __init__(self,pattern):self.calls=[];self.pattern=pattern
             def create_chat_completion(self,**request):
                 self.calls.append(request);required=request['response_format']['schema']['required']
-                if 'pattern' in required:
-                    data={k:'A specific concrete detail.' for k in required};data['pattern']=self.pattern
-                else:
-                    data={k:'A different specific line '+str(i)+'.' for i,k in enumerate(required)}
-                    data.update(opening_caption='The invitations had stopped.',turn_caption='That silence had hurt someone else.',ending_caption='Tomorrow would need an honest answer.')
-                    if self.pattern=='perseverance' and len(self.calls)==2:data['context_line']='How was the squat session?'
+                data=dict(pattern=self.pattern,contact='COACH' if self.pattern=='perseverance' else 'SISTER',occasion='birthday',cost='waited',wait_minutes=30,shared_memory='quiet_company',meeting_day='tomorrow',meeting_hour=18)
                 return {'choices':[{'message':{'content':json.dumps(data)}}]}
         for pattern in PATTERNS:
             model=Model(pattern);brief='She walks outside and sends an honest answer. End at the desk, writing again.'
             with tempfile.TemporaryDirectory() as directory:
                 diagnostic=Path(directory)/'writer.txt';p=write(model,'A completely different title',brief,'female',diagnostic)
                 self.assertEqual(write(model,'A completely different title',brief,'female',diagnostic),p)
-            self.assertEqual(len(model.calls),3 if pattern=='perseverance' else 2);self.assertEqual(len(p['scenes']),47)
+            self.assertEqual(len(model.calls),1);self.assertEqual(len(p['scenes']),47)
             self.assertEqual(p['pacing'],'natural');self.assertAlmostEqual(sum(x['duration'] for x in p['scenes']),p['target_seconds'])
             self.assertEqual(p['scenes'][-1]['action'],'write');self.assertEqual(p['scenes'][-1]['location'],'desk')
             self.assertEqual(sum(bool(x['caption']) for x in p['scenes']),3)
@@ -192,6 +187,15 @@ class GeneralWriterContractTests(unittest.TestCase):
                     draft=''
             if pattern=='perseverance':
                 self.assertEqual([x['effort'] for x in p['scenes'] if x['action']=='exercise'],[.28,.45,.85,.55,1.])
+        rooftop=write(Model('connection'),'Another distinct title','Male lead. He reaches out to a friend. End on the rooftop, quietly hopeful.','male')
+        self.assertEqual((rooftop['scenes'][-1]['location'],rooftop['scenes'][-1]['action']),('rooftop','idle'))
+        sent=write(Model('connection'),'Another ending','Male lead. He reaches out to a friend. End by sending the reply.','male')
+        self.assertEqual(sent['scenes'][-1]['action'],'send');self.assertTrue(sent['scenes'][-1]['pretyped'])
+        recovered=write(Model('perseverance'),'Recovery','Male lead. He tries again. End on the rooftop getting up.','male')
+        main=[x for x in recovered['scenes'] if x['shot']!='reaction']
+        self.assertEqual([x['action'] for x in main[-2:]],['fall','getup'])
+        curl=write(Model('perseverance'),'One more','Male lead. He tries again. End at the gym with a full curl.','male')
+        self.assertEqual(curl['scenes'][-1]['effort'],1.)
     def test_director_rejects_pose_captions_and_repeated_shadow_lines(self):
         from storyfilm.visual_writer import apply_direction
         core=depression_plan('Title','Male lead.')['scenes']

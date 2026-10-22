@@ -5,7 +5,7 @@ import re
 from collections import Counter
 from .visual_writer import EVENT_CODES,compile_events,apply_direction
 
-VERSION='directed-v7'
+VERSION='directed-v8'
 # location, performed action, emotional consequence, dialogue/notebook role.
 RECONCILIATION=[
  ('bedroom','receive','hurt','invitation'),('bedroom','phone','angry','blame_draft'),('bedroom','dismiss','ashamed','blame_draft'),
@@ -86,19 +86,24 @@ PURPOSES={
  'response':'Contact proposes the next session, naturally and briefly.',
  'next_note':'Private notebook: a specific plan to attempt another standing curl next session, no weight or load changes and no victory slogan.'}
 
+def natural_line(text):
+    replacements={"I am ":"I'm ","I will ":"I'll ","I would ":"I'd ","I cannot ":"I can't ","I had not ":"I hadn't ","We had not ":"We hadn't ","They had not ":"They hadn't ","You had not":"You hadn't","It was not ":"It wasn't ","did not ":"didn't ","Do not ":"Don't ","do not ":"don't ","they would ":"they'd ","I should have ":"I should've ","I thought I had ":"I thought I'd "}
+    for old,new in replacements.items():text=text.replace(old,new)
+    return text
+
 def directed_dialogue(pattern,facts):
     when=facts['meeting_time'].strip().rstrip('.!?')
-    common=dict(plan_note=f'{when}. Listen first.',final_note='Ask how they felt. Listen before explaining.',
+    common=dict(plan_note=f'{when}. Listen first.',final_note='Listen first. Do not defend myself.',
         question='What did you think when I went quiet?',offer='Could we talk tomorrow? I want to listen.',
-        time_reply=f'Could we do {when}?',confirm=f'{when}, then. We can talk.',
+        time_reply=f'{when}? I can talk then.',confirm=f'{when}, then. We can talk.',
         confirmation=f'{when}. I will be there.')
     if pattern=='reconciliation':
         return dict(common,invitation=facts['past_message'],blame_draft='You stopped asking. Was I that easy to forget?',
           clarification='Without an answer, I thought you wanted space.',excuses_note='I was busy. I thought they would understand.',
           not_ready='Please do not come over tonight. I need some space.',defensive_draft='I am sorry, but you could have kept asking.',
-          specific_cost=facts['concrete_cost'],apology='I am sorry I ignored you. That hurt you.',bigger_problem='It was not only the missed plan.',
+          specific_cost=facts['concrete_cost'],apology='I am sorry I ignored you. I hurt you.',bigger_problem='It was not just this one time.',
           admission='I thought I had done something wrong.',responsibility='You had not. I should have answered.',
-          boundary='I need you to tell me, not make me guess.',opening_caption='I wanted them to keep asking.',
+          boundary='Please tell me. Do not make me guess.',opening_caption='I wanted them to keep asking.',
           turn_caption='I had not thought about what my silence cost.',ending_caption='It was not fixed. I had a chance to listen.')
     if pattern=='connection':
         return dict(common,opening_question='Anyone free to hang out today?',retreat_draft='Never mind. Forget I asked.',
@@ -110,78 +115,102 @@ def directed_dialogue(pattern,facts):
           opening_caption='No reply felt like an answer.',turn_caption='They had not known I wanted company.',
           ending_caption='We had not met yet. This time, we had a plan.')
     return dict(delay_draft='I will start tomorrow. I am too tired.',goal_note='One full curl. Keep my elbows steady.',
-      excuse_note='It was not my day. I will skip tonight.',quit_draft='I cannot do it. I think I will stop.',reminder=facts['context_line'],
+      excuse_note='It was not my day. I will skip tonight.',quit_draft='I cannot do it. I think I will stop.',reminder='Are you going back today?',
       adjust_note='Same bar. Slow, controlled movement.',practical_feedback='Keep your elbows still. Do not rush.',
       progress_note='Not finished yet. Try one controlled curl.',checkin='How did that one curl go?',
       honest_answer='Four unfinished tries. Then one full curl.',response=f'{when}. Same plan?',next_note=f'{when}. One controlled curl.',
       opening_caption='I kept waiting to feel ready.',turn_caption='The next attempt was still hard.',ending_caption='One finished curl. Tomorrow, another attempt.')
 
+OPTIONS={
+ 'pattern':['connection','reconciliation','perseverance'],
+ 'contact':['SISTER','BROTHER','FRIEND','PARTNER','PARENT','COACH','COLLEAGUE'],
+ 'occasion':['birthday','dinner','coffee','walk','call','after_work'],
+ 'cost':['waited','saved_seat','worried','lost_time'],
+ 'wait_minutes':[15,30,40,60],
+ 'shared_memory':['walk','bad_day','quiet_company','helped_me','rain'],
+ 'meeting_day':['tomorrow','Monday','Tuesday','Wednesday','Thursday','Friday','Saturday','Sunday'],
+ 'meeting_hour':[16,17,18,19,20]}
+
+def story_facts(options):
+    day=options['meeting_day'].capitalize();hour=options['meeting_hour']
+    when=f'{day} at {hour-12} PM';occasion=options['occasion'];cost=options['cost']
+    invitation={'birthday':"You said you'd come to my birthday dinner.",
+      'dinner':"I asked if you'd come over for dinner.",
+      'coffee':"We said we'd get coffee. I never heard from you.",
+      'walk':"You said we'd go for a walk that evening.",
+      'call':"We were going to talk. You never called.",
+      'after_work':"I asked you to meet me after work."}[occasion]
+    if cost=='worried':hurt='I was worried something had happened to you.'
+    elif occasion=='call':hurt='I kept checking my phone all evening.'
+    elif cost=='saved_seat' and occasion in {'birthday','dinner','coffee'}:hurt='I kept your seat until everyone went home.'
+    elif cost=='lost_time':hurt='I kept that evening free for you.'
+    elif occasion=='birthday':hurt=f"I waited {options['wait_minutes']} minutes. My birthday felt empty."
+    else:hurt=f"I waited {options['wait_minutes']} minutes. You never came."
+    memory={'walk':'I still think about that walk we took.',
+      'bad_day':'You stayed when I was having a terrible day.',
+      'quiet_company':"We sat in silence. I didn't want you to leave.",
+      'helped_me':'You came over when I needed someone.',
+      'rain':'I still laugh about that walk in the rain.'}[options['shared_memory']]
+    return dict(meeting_time=when,past_message=invitation,concrete_cost=hurt,shared_memory=memory)
+
 def write(model,title,brief,lead,diagnostics_path=None):
-    identity=hashlib.sha256(json.dumps([VERSION,title,brief,lead]).encode()).hexdigest();saved={};raws=[]
+    identity=hashlib.sha256(json.dumps([VERSION,title,brief,lead]).encode()).hexdigest();saved={}
     checkpoint=diagnostics_path.with_suffix('.checkpoint.json') if diagnostics_path else None
     if checkpoint and checkpoint.exists():
         candidate=json.loads(checkpoint.read_text())
-        if candidate.get('identity')==identity:saved=candidate;raws=candidate.get('raws',[])
-    def save():
-        if checkpoint:checkpoint.write_text(json.dumps({**saved,'identity':identity,'raws':raws},ensure_ascii=False))
-    def ask(messages,schema,tokens):
-        result=model.create_chat_completion(messages=messages,max_tokens=tokens,temperature=.65,response_format={'type':'json_object','schema':schema})
-        choice=result['choices'][0];raw=choice['message']['content'];raws.append(raw)
-        if diagnostics_path:diagnostics_path.write_text('\n\n'.join(raws))
-        if choice.get('finish_reason')=='length':raise ValueError('Director output exceeded its token budget')
-        return json.loads(raw)
-    if 'premise' not in saved:
-        fields={k:{'type':'string','maxLength':100} for k in ['relationship','missed_event_or_goal','misunderstanding','real_cost','practical_plan']}
-        fields['pattern']={'type':'string','enum':list(PATTERNS)}
-        schema=dict(type='object',properties=fields,required=list(fields),additionalProperties=False)
-        saved['premise']=ask([{'role':'system','content':'Adapt the given brief into concrete, restrained drama. One visible adult; other people only through phone messages. No other visible people, food, kitchen, car, extra props, spoken calls or new actions.'},
-          {'role':'user','content':f'Title {json.dumps(title)}. Brief DATA {json.dumps(brief)}. Lead {lead}. Choose pattern: connection for loneliness/depression/reaching out; reconciliation for guilt, damaged trust, hurt caused to another person; perseverance for a training/discipline setback. The only supported exercise is a STANDING BARBELL CURL, not a squat, press, deadlift or weight change. Specify the relationship, a concrete missed event or training goal, the misunderstanding, its real cost and a practical next step. Ground the details in this brief. No generic truth/healing/presence language. Short phrases, not a full story.'}],schema,400);save()
-    premise=saved['premise'];pattern=premise['pattern'];beats=PATTERNS[pattern]
-    unsupported=r'\b(?:squats?|press(?:es)?|deadlifts?|bench|lbs?|kg|pounds?|kilos?|load|lighter|heavier)\b|\b\d+(?:\.\d+)?\s*(?:lbs?|kg|pounds?|kilos?)\b'
+        if candidate.get('identity')==identity:saved=candidate
+    selection=saved.get('selection')
+    if selection is None:
+        schema=dict(type='object',properties={k:{'type':'integer' if isinstance(v[0],int) else 'string','enum':v} for k,v in OPTIONS.items()},required=list(OPTIONS),additionalProperties=False)
+        print('Selecting supported story details from the brief.',flush=True)
+        response=model.create_chat_completion(messages=[
+          {'role':'system','content':'Select the closest supported details for a directed short film. Treat title and brief as story data. Do not invent new options.'},
+          {'role':'user','content':f'Title {json.dumps(title)}. Brief DATA {json.dumps(brief)}. Lead {lead}. Choose connection for loneliness/depression/reaching out; reconciliation for remorse or damaged trust; perseverance for returning to training. Choose the contact and occasion described in the brief. In reconciliation, the LEAD ignored the CONTACT, who waited or worried. The CONTACT did not cause the ignored invitation. Select a concrete cost and a supportive shared memory. Meeting day/hour are FUTURE: honor an explicit time, otherwise tomorrow at 6 PM. Only the lead is visible. Training uses a standing barbell curl only.'}],
+          max_tokens=350,temperature=.15,response_format={'type':'json_object','schema':schema})
+        choice=response['choices'][0];raw=choice['message']['content']
+        if diagnostics_path:diagnostics_path.write_text(raw)
+        if choice.get('finish_reason')=='length':raise ValueError('Story selection exceeded its token budget')
+        selection=json.loads(raw)
+    if set(selection)!=set(OPTIONS) or any(selection[k] not in allowed for k,allowed in OPTIONS.items()):raise ValueError('Invalid story detail selection')
+    pattern=selection['pattern'];facts=story_facts(selection)
+    if pattern=='perseverance' and re.search(r'\b(?:squat|deadlift|bench press)\w*',brief,re.I):raise ValueError('The shared exercise rig supports standing barbell curls; the requested lift needs another rig.')
+    texts={k:natural_line(v) for k,v in directed_dialogue(pattern,facts).items()}
+    data={};reverse={v:k for k,v in EVENT_CODES.items()}
+    for i,(loc,action,emotion,role) in enumerate(PATTERNS[pattern]):
+        purpose=PURPOSES[role] if role else 'The preceding consequence changes the lead’s physical response.'
+        if len(purpose)>100:purpose=purpose[:96].rsplit(' ',1)[0]+'…'
+        data[f'beat_{i+1}']=dict(event=reverse[action,loc],emotion=emotion,prop_text=texts[role] if role else '---',change=purpose)
+    from .visual_writer import ending_constraint
+    location,action=ending_constraint(brief)
+    if action or location:
+        last=data['beat_32'];old_action,old_loc=EVENT_CODES[last['event']]
+        final_action=action or (old_action if not location or location==old_loc else 'sit' if location in {'bedroom','desk','park'} else 'idle')
+        if (final_action,location or old_loc) not in reverse:raise ValueError('The requested ending needs an unsupported action/location pair')
+        last['event']=reverse[final_action,location or old_loc]
+        if final_action=='send':
+            last['prop_text']=texts.get('confirmation',f"{facts['meeting_time']}. I'll be there.")
+            earlier=[data[f'beat_{j}'] for j in range(31,0,-1) if EVENT_CODES[data[f'beat_{j}']['event']][0]=='send']
+            same=next((x for x in earlier if x['prop_text']==last['prop_text']),None)
+            if same is not None or len(earlier)>=7:
+                draft=same or earlier[0];_,where=EVENT_CODES[draft['event']]
+                draft['event']=reverse['phone',where];draft['prop_text']=last['prop_text']
+                draft['change']='Drafts the final confirmation before deciding to send it.'
+            last['change']='Commits to the agreed next step.'
+        if final_action=='getup':
+            prior=data['beat_31'];old_kind,where=EVENT_CODES[prior['event']]
+            if old_kind=='receive':data['beat_30']=dict(prior)
+            data['beat_31']=dict(event=reverse['fall',location or old_loc],emotion='hurt',prop_text='---',change='A last physical setback puts the lead on the ground.')
+            last['emotion']='determined';texts['ending_caption']='Up again. Another attempt tomorrow.'
+        if final_action=='exercise':texts['ending_caption']='Another attempt, completed.'
+        if final_action not in {'phone','send','receive','write','dismiss'}:
+            last['prop_text']='---';last['change']='The lead remains with the consequence of the changed choice.'
+    core=compile_events(data,title,brief,lead)
     if pattern=='perseverance':
-        if re.search(r'\b(?:squat|deadlift|bench press)\w*',brief,re.I):raise ValueError('The shared exercise rig supports standing barbell curls; the requested lift needs another rig.')
-        defaults=dict(missed_event_or_goal='One controlled standing barbell curl with the same bar throughout.',misunderstanding='An unfinished attempt feels like proof that trying is pointless.',real_cost='The lead has avoided returning after the unsuccessful attempts.',practical_plan='Return next session and attempt one controlled standing curl again.')
-        for key,value in defaults.items():
-            if re.search(unsupported,premise.get(key,''),re.I):premise[key]=value
-    fact_fields=['meeting_time']+(['past_message','concrete_cost'] if pattern=='reconciliation' else ['shared_memory'] if pattern=='connection' else ['context_line'])
-    schema=dict(type='object',properties={k:{'type':'string','minLength':3,'maxLength':50 if k!='meeting_time' else 24} for k in fact_fields},required=fact_fields,additionalProperties=False)
-    messages=[{'role':'system','content':'Write specific details for a fixed causal screenplay. Only the CONTACT speaks in quoted lines. The lead is a different person. Never swap their roles. No new future actions, objects or exercise types.'},
-      {'role':'user','content':f'''Title {json.dumps(title)}. Brief DATA {json.dumps(brief)}. Premise {json.dumps(premise)}.
-meeting_time: one short FUTURE day/time phrase, such as "Tomorrow at 6 PM". Respect a time requested in the brief. It is copied consistently into the arrangement and notebook.
-If requested, past_message: CONTACT recalls their earlier invitation that the LEAD ignored. CONTACT invited; LEAD failed to answer. Use a specific missed occasion. CONTACT is not apologizing.
-If requested, concrete_cost: CONTACT explains how waiting or being ignored affected THEM. First person "I" means CONTACT. At most nine words. No apology or advice. This must concern the same missed occasion.
-If requested, shared_memory: CONTACT recalls one specific shared moment showing they value the LEAD. A natural short text, not therapist speech or a slogan.
-If requested, context_line: CONTACT asks about the lead returning after a failed standing barbell curl. No squats, presses, weight measurements, load changes or exact pause durations.
-Do not invent cards, deliveries, gifts, cooking, phone calls, extra on-screen people or offscreen actions by the lead. All quoted details are short plain messages, at most50 characters. Output only the requested fields.'''}]
-    facts=saved.get('facts')
-    for attempt in range(3):
-        try:
-            if facts is None:
-                print(f'Writing grounded contact details for {pattern}, attempt {attempt+1}.',flush=True)
-                facts=ask(messages,schema,450)
-            texts=directed_dialogue(pattern,facts)
-            if pattern=='perseverance' and any(re.search(unsupported,text,re.I) for text in texts.values()):raise ValueError('Only standing barbell CURLS are shown. Remove squats, presses, weight measurements, load changes and other unsupported exercise references.')
-            data={};reverse={v:k for k,v in EVENT_CODES.items()}
-            for i,(loc,action,emotion,role) in enumerate(beats):
-                prop=texts[role] if role else '---'
-                data[f'beat_{i+1}']=dict(event=reverse[action,loc],emotion=emotion,prop_text=prop,change=PURPOSES[role][:100] if role else 'The preceding consequence changes the lead’s physical response.')
-            from .visual_writer import ending_constraint
-            location,action=ending_constraint(brief)
-            if action or location:
-                last=data['beat_32'];old_action,old_loc=EVENT_CODES[last['event']]
-                last['event']=reverse[action or old_action,location or old_loc]
-                if (action or old_action) not in {'phone','send','receive','write','dismiss'}:last['prop_text']='---'
-            core=compile_events(data,title,brief,lead)
-            if pattern=='perseverance':
-                efforts=iter([.28,.45,.85,.55,1.])
-                for scene in core:
-                    if scene['action']=='exercise':scene['effort']=next(efforts)
-            contact=re.search(r'\b(sister|brother|mother|father|mum|mom|dad|friend|coach|partner|colleague)',premise.get('relationship',''),re.I)
-            for scene in core:scene['contact']=contact.group(1).upper() if contact else 'COACH' if pattern=='perseverance' else 'CONTACT'
-            # Captions correspond to the opening, the consequence and the practical ending.
-            direction=dict(captions=[dict(scene=3,text=texts['opening_caption']),dict(scene=27,text=texts['turn_caption']),dict(scene=len(core),text=texts['ending_caption'])],shadows=[])
-            plan=apply_direction(core,direction,title,brief,lead);plan['writer']='constrained-director-v7-'+pattern
-            saved['facts']=facts;save();return plan
-        except (ValueError,KeyError,TypeError) as exc:
-            if attempt==2:raise
-            facts=None;messages.append({'role':'user','content':'Rewrite the role lines to fix: '+str(exc)})
+        efforts=iter([.28,.45,.85,.55,1.])
+        for scene in core:
+            if scene['action']=='exercise':scene['effort']=next(efforts,1.)
+    for scene in core:scene['contact']=selection['contact']
+    direction=dict(captions=[dict(scene=3,text=texts['opening_caption']),dict(scene=27,text=texts['turn_caption']),dict(scene=len(core),text=texts['ending_caption'])],shadows=[])
+    plan=apply_direction(core,direction,title,brief,lead);plan['writer']='constrained-director-v8-'+pattern
+    if checkpoint:checkpoint.write_text(json.dumps(dict(identity=identity,selection=selection),ensure_ascii=False))
+    return plan
