@@ -52,7 +52,7 @@ jobs:
           data = ['visual-v4.3', os.environ['FILM_TITLE'], os.environ['FILM_BRIEF'], 'Qwen3-4B-Instruct-2507']
           digest = hashlib.sha256(json.dumps(data).encode()).hexdigest()
           with open(os.environ['GITHUB_OUTPUT'], 'a') as out:
-              out.write('key=story-v43-' + digest + '\n')
+              out.write('key=story-v44-' + digest + '\n')
           PYCODE
       - name: Restore story writing progress
         uses: actions/cache/restore@v4

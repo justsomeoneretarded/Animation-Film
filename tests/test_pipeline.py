@@ -165,14 +165,13 @@ class GeneralWriterContractTests(unittest.TestCase):
                 required=request['response_format']['schema']['required']
                 if 'opening' in required:
                     data={k:'A specific cause and consequence.' for k in required}
-                elif 'scene_1' in required:
+                elif 'beat_1' in required:
                     data={}
-                    for i in range(COUNT):
-                        action,location,shot,emotion,prop=[('phone','bedroom','insert','worried',f'An unanswered question {i}'),('stand','bedroom','wide','tired',''),('walk','street','wide','worried',''),('write','desk','insert','worried',f'Draft {i}'),('send','park','insert','determined',f'An honest answer {i}'),('sit','park','reaction','neutral','')][i%6]
-                        if i%6==1 and i>=18:action='idle'
-                        if i==COUNT-1:action,location,shot,prop='write','desk','insert','Keep writing.'
-                        data[f'scene_{i+1}']=dict(action=action,location=location,shot=shot,emotion=emotion,prop_text=prop)
-                    if len(self.calls)==2:data.pop('scene_36')
+                    for i in range(12):
+                        action,location,emotion,prop=[('receive','bedroom','worried',f'Can we talk {i}?'),('phone','bedroom','tired',f'Draft {i}'),('walk','street','worried',''),('write','desk','worried',f'The truth {i}'),('send','park','determined',f'An honest answer {i}'),('sit','park','neutral','')][i%6]
+                        if i==11:action,location,prop='write','desk','Keep writing.'
+                        data[f'beat_{i+1}']=dict(action=action,location=location,emotion=emotion,prop_text=prop)
+                    if len(self.calls)==2:data.pop('beat_12')
                 else:
                     data=dict(captions=[dict(scene=i,text=t) for i,t in [(1,'The question had waited all night.'),(10,'An easy answer would have been another lie.'),(24,'Perfect was no longer the point.'),(36,'There was room for another sentence.')]],shadows=[dict(scene=2,text='Leave it unanswered.'),dict(scene=20,text='They will misunderstand.')])
                 return {'choices':[{'message':{'content':json.dumps(data)}}]}
@@ -188,7 +187,11 @@ class GeneralWriterContractTests(unittest.TestCase):
         self.assertEqual(sum(bool(s['shadow_text']) for s in p['scenes']),2)
         self.assertTrue(all('Writes' in s['event'] for s in p['scenes'] if s['action']=='write'))
         self.assertTrue(all(not s['voiceover'] for s in p['scenes']))
-        variants=model.calls[1]['response_format']['schema']['properties']['scene_1']['oneOf']
+        from storyfilm.visual_writer import shot_variants,beat_schema
+        variants=shot_variants()
+        required=beat_schema(brief)['properties']
+        self.assertEqual(required['beat_10']['properties']['action']['enum'],['send'])
+        self.assertEqual(required['beat_12']['properties']['action']['enum'],['write'])
         for location,action in [('bedroom','walk'),('gym','write'),('rooftop','sleep'),('street','sit'),('park','knock'),('desk','exercise')]:
             self.assertFalse(any(location in v['properties']['location']['enum'] and action in v['properties']['action']['enum'] for v in variants))
         for v in variants:

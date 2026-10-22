@@ -6,7 +6,7 @@ from collections import Counter
 from .screenplay import validate_screenplay, LOCATIONS, EMOTIONS
 
 COUNT=36
-VERSION='visual-v4.3'
+VERSION='visual-v4.4'
 EVENTS={
  'idle':'Stands and holds the reaction.', 'sit':'Sits with both feet planted.',
  'stand':'Rises from the seat and pauses.', 'sleep':'Lies on the bed with eyes closed.',
@@ -71,6 +71,47 @@ def core_schema(brief):
     return dict(type='object',properties=properties,required=list(properties),additionalProperties=False)
 
 
+def beat_schema(brief):
+    """Small uniform grammar avoids bias toward one branch of a large union."""
+    properties={}
+    for i in range(12):
+        actions=list(EVENTS)
+        if i==3 and re.search(r'\bwrit',brief,re.I):actions=['write']
+        if i==6 and re.search(r'\bwalk',brief,re.I):actions=['walk']
+        if i==9 and re.search(r'\bsend',brief,re.I):actions=['send']
+        location,action=ending_constraint(brief) if i==11 else (None,None)
+        if action:actions=[action]
+        fields={'action':{'type':'string','enum':actions},
+                'location':{'type':'string','enum':[location] if location else sorted(LOCATIONS)},
+                'emotion':{'type':'string','enum':sorted(EMOTIONS)},
+                'prop_text':{'type':'string','maxLength':110}}
+        properties[f'beat_{i+1}']=dict(type='object',properties=fields,required=list(fields),additionalProperties=False)
+    return dict(type='object',properties=properties,required=list(properties),additionalProperties=False)
+
+
+def expand_beats(data):
+    if set(data)!={f'beat_{i+1}' for i in range(12)}:raise ValueError('Write exactly twelve connected events')
+    result={};counts=Counter()
+    for i in range(12):
+        event=dict(data[f'beat_{i+1}']);action=event['action'];counts[action]+=1
+        if counts[action]>4:raise ValueError('At most four events may repeat one action; advance the journey')
+        if action in {'write','exercise','sleep','reach','knock'}:
+            event['location']={'write':'desk','exercise':'gym','sleep':'bedroom','reach':'street','knock':'street'}[action]
+        if action in {'walk','fall','getup'} and event['location'] not in {'street','park','rooftop'}:event['location']='street'
+        if action in {'sit','stand'} and event['location'] not in {'bedroom','desk','park'}:event['location']='park'
+        object_action=action in {'phone','send','receive','write'}
+        if object_action and not event['prop_text'].strip():raise ValueError('Phone and notebook events need their exact visible words')
+        if not object_action:event['prop_text']=''
+        pose='phone' if action in {'phone','send','receive'} else 'sit' if event['location'] in {'bedroom','desk','park'} else 'idle'
+        setup={**event,'action':pose,'shot':'wide','prop_text':''}
+        performed={**event,'shot':'insert' if object_action else 'wide'}
+        reaction={**event,'action':pose,'shot':'reaction','prop_text':''}
+        # Finish on the requested action, rather than adding a neutral pose after it.
+        shots=[setup,performed,reaction] if i<11 else [setup,reaction,performed]
+        for j,shot in enumerate(shots):result[f'scene_{i*3+j+1}']=shot
+    return result
+
+
 def compile_core(data,title,brief,lead):
     if set(data)!={f'scene_{i+1}' for i in range(COUNT)}:raise ValueError(f'Write exactly {COUNT} numbered shots')
     scenes=[];previous='tired'
@@ -94,8 +135,8 @@ def compile_core(data,title,brief,lead):
     for pattern,action in [(r'\bsend\w*\b','send'),(r'\bwrit\w*\b','write'),(r'\bwalk\w*\b','walk')]:
         if re.search(pattern,brief,re.I) and action not in actions:raise ValueError(f'The brief needs a visible {action} action')
     if len(set(actions))<4:raise ValueError('Use at least four distinct playable actions; do not repeat holding/sitting throughout')
-    if sum(a in {'write','send','receive','walk','exercise','reach','knock','fall','getup','stand'} for a in actions)<12:
-        raise ValueError('Too few acted events; at least twelve shots need a specific performed action')
+    if sum(a in {'write','send','receive','walk','exercise','reach','knock','fall','getup','stand'} for a in actions)<8:
+        raise ValueError('Too few acted events; at least eight shots need a specific performed action')
     if len({s['emotion'] for s in scenes})<2:raise ValueError('The story needs a visible emotional change')
     # A message or written phrase can be revisited, but cannot fill the whole film.
     counts=Counter(s['prop_text'].casefold().strip() for s in scenes if s['shot']=='insert' and s['prop_text'])
@@ -135,7 +176,7 @@ def apply_direction(core,direction,title,brief,lead):
             choice=choices[-1]
             visible=next((i for i in range(choice,COUNT) if scenes[i]['shot']!='insert'),None)
             if visible is not None and not scenes[visible]['shadow_text']:scenes[visible]['shadow']='shrink'
-    return validate_screenplay(dict(scenes=scenes,target_seconds=210,writer='connected-visual-screenplay-qwen4b-v43'),title,brief,lead)
+    return validate_screenplay(dict(scenes=scenes,target_seconds=210,writer='connected-visual-screenplay-qwen4b-v44'),title,brief,lead)
 
 
 def write(model,title,brief,lead,diagnostics_path=None):
@@ -168,21 +209,21 @@ def write(model,title,brief,lead,diagnostics_path=None):
         try:core=compile_core({f'scene_{i+1}':{k:s[k] for k in ('action','location','shot','emotion','prop_text','time','weather')} for i,s in enumerate(core)},title,brief,lead)
         except (ValueError,KeyError,TypeError):core=None;saved.pop('direction',None)
     if core is None:
-        prompt=f'''Stage the WHOLE film as {COUNT} numbered shots, scene_1 through scene_{COUNT}, one complete connected arc.
+        prompt=f'''Write TWELVE consequential events, beat_1 through beat_12, for ONE complete connected film.
 Title: {json.dumps(title)}. Lead: {lead}. Brief DATA: {json.dumps(brief)}.
 Story arc: {json.dumps(outline)}.
-Shots 1–12 establish the pattern, the desire and a failed attempt. Shots 13–24 show its consequence, a difficult step and a real setback. Shots 25–36 make a different consequential choice and fulfill the requested ending. Never restart or repeat an earlier act.
-Use only the supported action/location pairs in the schema. Choose the ACTION first, then its setting. Change indoor settings with a cut. Walking/falling/getting up are outdoors. Writing uses the desk. Sleeping uses the bed. Sitting/rising needs the bed, desk chair or park bench. Reaching/knocking uses the street door. Exercise is one barbell rep in the gym.
-One human only. Do not invent objects, folding pages, opening books, eating, calls, extra people, or invisible physical actions. This is a performed story, not a slideshow of poses. Include purposeful movement, the failed attempt, a response, a pause and a new choice. Use at most four stand shots; do not fill acts with repeated sitting and rising.
-shot=wide establishes place; close/reaction shows an emotional change; insert shows an object interaction. Every send and receive MUST be an insert with the exact message in prop_text. Phone wide/close means holding the phone, not sending. Phone insert is an unsent draft. Write uses the exact notebook words in prop_text. A send is a committed choice; show it if the brief asks for it. Empty prop_text on other actions.
-Use brief, natural message/notebook wording that advances the story. Do not repeat the same message insert more than four times. Revisit a place with changed behavior rather than repeating events. Use different expressions as the story develops. End exactly as the brief requests. No captions or prose descriptions in this pass: the actions themselves are the screenplay.'''
+Beats 1–4: establish the unanswered question and a failed attempt. Beats 5–8: consequence, a difficult step outside and setback. Beats 9–12: a different choice, its response, and the requested ending. Follow the actual brief over this suggested structure.
+Each beat is one playable event, not a camera shot. The editor will show its setup, actual action and emotional reaction. Do not duplicate events for camera coverage. Use at least four action kinds and at most four occurrences of any action. Keep places contiguous during an attempt; never bounce between desk and park on every beat.
+Available actions: {json.dumps(EVENTS)}. Writing takes place at the desk; walking/falling/getting up outdoors; sleep in bedroom; exercise in gym; reaching/knocking at the street door. Sitting requires bedroom, desk or park. A phone action is an unsent draft; SEND commits an answer; RECEIVE is the other person's exact message. Include these consequences when the brief asks for them.
+prop_text: exact short message or notebook words for phone/send/receive/write; empty for all other events. Natural concrete wording, not repeated affirmations. One human only, no extra props or invisible activities. No instant cure. Finish at the requested place performing the requested action.
+Output only action, location, emotion and prop_text for each beat. No camera choices or captions in this pass.'''
         messages=[{'role':'system','content':'You are a visual dramatist. Plan literal playable actions across ONE continuous complete story.'},{'role':'user','content':prompt}]
-        schema=core_schema(brief)
+        schema=beat_schema(brief)
         for attempt in range(3):
             print(f'Writing the complete {COUNT}-shot action story, attempt {attempt+1}.',flush=True)
             try:
-                data=ask(messages,schema,4000)
-                core=compile_core(data,title,brief,lead);break
+                data=ask(messages,schema,2000)
+                core=compile_core(expand_beats(data),title,brief,lead);break
             except (ValueError,KeyError,TypeError) as exc:
                 if attempt==2:raise
                 messages[1]['content']=prompt+f'\nRewrite the WHOLE story and fix this validation problem: {exc}'
