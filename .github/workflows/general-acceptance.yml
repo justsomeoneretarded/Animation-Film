@@ -1,5 +1,5 @@
 name: General writer acceptance
-# Validate a twelve-event story expanded into 36 motivated shots and sparse story direction for a female lead.
+# Validate a twelve-event story expanded into 36 motivated shots and meaningful captions and sparse story direction for a female lead.
 on:
   workflow_dispatch:
   push:

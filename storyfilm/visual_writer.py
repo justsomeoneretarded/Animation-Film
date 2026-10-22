@@ -165,7 +165,7 @@ def apply_direction(core,direction,title,brief,lead):
             if index in used:raise ValueError('Use separate shots for separate cues of the same type')
             if identity in seen:raise ValueError('Do not repeat captions or shadow lines')
             if len(text.split())>18:raise ValueError('Keep text under 18 words')
-            if field=='caption' and re.search(r'\b(?:she|he) (?:sits?|stands?|writes?|walks?|looks?|breathes?)\b|lamp glows|rain taps',text,re.I):
+            if field=='caption' and re.search(r'^(?:she|he) (?:sits?|stands?|writes?|walks?|looks?|breathes?)(?: (?:in|on|at|across|to|down|up|slowly|quietly|outside|inside)\b[^.!?]*)?[.!?]?$|lamp glows|rain taps',text,re.I):
                 raise ValueError('Captions must add story meaning, not describe poses, breathing, lamps or rain')
             if field=='shadow_text' and len(text)>70:raise ValueError('Shorten the shadow line')
             scenes[index][field]=text;used.add(index);seen.add(identity)
@@ -236,7 +236,7 @@ Output only action, location, emotion and prop_text for each beat. No camera cho
     messages=[{'role':'system','content':'Direct economical text over a performed film. Never describe an action that is absent.'},
               {'role':'user','content':f'''Title {json.dumps(title)}. Brief DATA: {json.dumps(brief)}. Arc: {json.dumps(outline)}.
 ACTUAL performed shots: {json.dumps(compact)}.
-Choose 4–6 short white story captions across the WHOLE film. Add meaning, stakes or a change in understanding; do not describe sitting, standing, walking, looking, writing, breathing, lamps or rain. No generic advice or slogans. The visible messages already carry dialogue. Avoid explaining every beat.
+Choose 4–6 short white story captions across the WHOLE film. Add meaning, stakes or a change in understanding; do not describe sitting, standing, walking, looking, writing, breathing, lamps or rain. Use plain, specific inner thoughts, not poetry, abstractions or motivational slogans. The visible messages already carry dialogue. Avoid explaining every beat.
 Optionally choose 0–4 short red shadow lines at specific moments of doubt. Each line must be different and tied to this story. Never repeat a line. Give each cue its actual numbered scene and text, at most 18 words. No new people, objects, physical events, miraculous cure or unearned victory. The last caption must fit the actual ending. Output captions and shadows arrays only.'''}]
     for attempt in range(3):
         print(f'Directing sparse story text, attempt {attempt+1}.',flush=True)

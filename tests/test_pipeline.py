@@ -203,6 +203,8 @@ class GeneralWriterContractTests(unittest.TestCase):
         captions=[dict(scene=i,text='A distinct story meaning '+str(i)) for i in (1,10,20,36)]
         captions[0]['text']='She writes in her notebook.'
         with self.assertRaises(ValueError):apply_direction(core,dict(captions=captions,shadows=[]),'Title','Male lead.','male')
+        captions[0]['text']='The first words she writes are for herself.'
+        self.assertEqual(apply_direction(core,dict(captions=captions,shadows=[]),'Title','Male lead.','male')['scenes'][0]['caption'],captions[0]['text'])
         captions[0]['text']='The question had waited all night.'
         shadows=[dict(scene=2,text='Do not answer.'),dict(scene=3,text='Do not answer.')]
         with self.assertRaises(ValueError):apply_direction(core,dict(captions=captions,shadows=shadows),'Title','Male lead.','male')
