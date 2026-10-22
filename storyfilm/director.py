@@ -5,7 +5,7 @@ import re
 from collections import Counter
 from .visual_writer import EVENT_CODES,compile_events,apply_direction
 
-VERSION='directed-v6'
+VERSION='directed-v7'
 # location, performed action, emotional consequence, dialogue/notebook role.
 RECONCILIATION=[
  ('bedroom','receive','hurt','invitation'),('bedroom','phone','angry','blame_draft'),('bedroom','dismiss','ashamed','blame_draft'),
@@ -86,6 +86,36 @@ PURPOSES={
  'response':'Contact proposes the next session, naturally and briefly.',
  'next_note':'Private notebook: a specific plan to attempt another standing curl next session, no weight or load changes and no victory slogan.'}
 
+def directed_dialogue(pattern,facts):
+    when=facts['meeting_time'].strip().rstrip('.!?')
+    common=dict(plan_note=f'{when}. Listen first.',final_note='Ask how they felt. Listen before explaining.',
+        question='What did you think when I went quiet?',offer='Could we talk tomorrow? I want to listen.',
+        time_reply=f'Could we do {when}?',confirm=f'{when}, then. We can talk.',
+        confirmation=f'{when}. I will be there.')
+    if pattern=='reconciliation':
+        return dict(common,invitation=facts['past_message'],blame_draft='You stopped asking. Was I that easy to forget?',
+          clarification='Without an answer, I thought you wanted space.',excuses_note='I was busy. I thought they would understand.',
+          not_ready='Please do not come over tonight. I need some space.',defensive_draft='I am sorry, but you could have kept asking.',
+          specific_cost=facts['concrete_cost'],apology='I am sorry I ignored you. That hurt you.',bigger_problem='It was not only the missed plan.',
+          admission='I thought I had done something wrong.',responsibility='You had not. I should have answered.',
+          boundary='I need you to tell me, not make me guess.',opening_caption='I wanted them to keep asking.',
+          turn_caption='I had not thought about what my silence cost.',ending_caption='It was not fixed. I had a chance to listen.')
+    if pattern=='connection':
+        return dict(common,opening_question='Anyone free to hang out today?',retreat_draft='Never mind. Forget I asked.',
+          belief_note='Nobody wants me around.',not_home='I am out. I did not know you were coming.',honest_draft='I have been feeling alone. Can we talk?',
+          clarification='I thought you wanted some quiet.',specific_fear='I keep thinking you will get bored of me.',shared_memory=facts['shared_memory'],
+          question='Could we spend some time together this week?',schedule=f'Would {when} work for you?',commitment=f'{when}. Yes, I would like that.',
+          practical_limit='I may be a few minutes late after work.',offer='I can wait by the park. Text when you leave?',
+          confirm='I will. I want to see you.',followup='Want me to check in before I leave?',yes_reply='Yes. Thank you for asking.',
+          opening_caption='No reply felt like an answer.',turn_caption='They had not known I wanted company.',
+          ending_caption='We had not met yet. This time, we had a plan.')
+    return dict(delay_draft='I will start tomorrow. I am too tired.',goal_note='One full curl. Keep my elbows steady.',
+      excuse_note='It was not my day. I will skip tonight.',quit_draft='I cannot do it. I think I will stop.',reminder=facts['context_line'],
+      adjust_note='Same bar. Slow, controlled movement.',practical_feedback='Keep your elbows still. Do not rush.',
+      progress_note='Not finished yet. Try one controlled curl.',checkin='How did that one curl go?',
+      honest_answer='Four unfinished tries. Then one full curl.',response=f'{when}. Same plan?',next_note=f'{when}. One controlled curl.',
+      opening_caption='I kept waiting to feel ready.',turn_caption='The next attempt was still hard.',ending_caption='One finished curl. Tomorrow, another attempt.')
+
 def write(model,title,brief,lead,diagnostics_path=None):
     identity=hashlib.sha256(json.dumps([VERSION,title,brief,lead]).encode()).hexdigest();saved={};raws=[]
     checkpoint=diagnostics_path.with_suffix('.checkpoint.json') if diagnostics_path else None
@@ -113,23 +143,23 @@ def write(model,title,brief,lead,diagnostics_path=None):
         defaults=dict(missed_event_or_goal='One controlled standing barbell curl with the same bar throughout.',misunderstanding='An unfinished attempt feels like proof that trying is pointless.',real_cost='The lead has avoided returning after the unsuccessful attempts.',practical_plan='Return next session and attempt one controlled standing curl again.')
         for key,value in defaults.items():
             if re.search(unsupported,premise.get(key,''),re.I):premise[key]=value
-    roles=list(dict.fromkeys(r for _,_,_,r in beats if r))
-    role_schema={r:{'type':'string','minLength':3,'maxLength':60} for r in roles}
-    role_schema.update({k:{'type':'string','minLength':3,'maxLength':80} for k in ['opening_caption','turn_caption','ending_caption']})
-    schema=dict(type='object',properties=role_schema,required=list(role_schema),additionalProperties=False)
-    messages=[{'role':'system','content':'Write natural dialogue and private notebook fragments for a precisely directed film. Each line has one different purpose. No repeated apologies or resolutions, slogans, poetry, therapist speech or generic affirmations. No new physical events.'},
+    fact_fields=['meeting_time']+(['past_message','concrete_cost'] if pattern=='reconciliation' else ['shared_memory'] if pattern=='connection' else ['context_line'])
+    schema=dict(type='object',properties={k:{'type':'string','minLength':3,'maxLength':50 if k!='meeting_time' else 24} for k in fact_fields},required=fact_fields,additionalProperties=False)
+    messages=[{'role':'system','content':'Write specific details for a fixed causal screenplay. Only the CONTACT speaks in quoted lines. The lead is a different person. Never swap their roles. No new future actions, objects or exercise types.'},
       {'role':'user','content':f'''Title {json.dumps(title)}. Brief DATA {json.dumps(brief)}. Premise {json.dumps(premise)}.
-Write the exact visible words for these roles, in their listed order: {json.dumps({r:PURPOSES[r] for r in roles})}.
-The lead and contact have a specific history; use concrete details from the premise. Every reply answers an earlier SENT message or refers to the missed event. The contact cannot read a deleted draft or a private notebook. The lead visits the street door before not_ready/not_home, then continues by message. No new visible people or objects.
-If this is a perseverance story, every exercise is a standing barbell CURL with the same bar, not a squat or press. Never mention changing weight, load, kilograms or pounds.
-One short sentence or fragment per role, preferably 4–9 words, at most60 characters. Keep role lines different; only the director repeats a draft when it is deleted or sent. Keep day/time details consistent in all scheduling lines and notes. A notebook line is private, not sent. The last eight beats handle one practical arrangement, not repeated emotional reconciliation.
-Also write opening_caption, turn_caption and ending_caption: short inner thoughts, at most14 words, each adding context rather than describing poses or repeating visible messages. No miraculous cure or unearned triumph. The ending fits the brief and the practical next step. Output only the requested fields.'''}]
-    texts=saved.get('texts')
+meeting_time: one short FUTURE day/time phrase, such as "Tomorrow at 6 PM". Respect a time requested in the brief. It is copied consistently into the arrangement and notebook.
+If requested, past_message: CONTACT recalls their earlier invitation that the LEAD ignored. CONTACT invited; LEAD failed to answer. Use a specific missed occasion. CONTACT is not apologizing.
+If requested, concrete_cost: CONTACT explains how waiting or being ignored affected THEM. First person "I" means CONTACT. At most nine words. No apology or advice. This must concern the same missed occasion.
+If requested, shared_memory: CONTACT recalls one specific shared moment showing they value the LEAD. A natural short text, not therapist speech or a slogan.
+If requested, context_line: CONTACT asks about the lead returning after a failed standing barbell curl. No squats, presses, weight measurements, load changes or exact pause durations.
+Do not invent cards, deliveries, gifts, cooking, phone calls, extra on-screen people or offscreen actions by the lead. All quoted details are short plain messages, at most50 characters. Output only the requested fields.'''}]
+    facts=saved.get('facts')
     for attempt in range(3):
         try:
-            if texts is None:
-                print(f'Writing role-specific dialogue for {pattern}, attempt {attempt+1}.',flush=True)
-                texts=ask(messages,schema,1800)
+            if facts is None:
+                print(f'Writing grounded contact details for {pattern}, attempt {attempt+1}.',flush=True)
+                facts=ask(messages,schema,450)
+            texts=directed_dialogue(pattern,facts)
             if pattern=='perseverance' and any(re.search(unsupported,text,re.I) for text in texts.values()):raise ValueError('Only standing barbell CURLS are shown. Remove squats, presses, weight measurements, load changes and other unsupported exercise references.')
             data={};reverse={v:k for k,v in EVENT_CODES.items()}
             for i,(loc,action,emotion,role) in enumerate(beats):
@@ -146,10 +176,12 @@ Also write opening_caption, turn_caption and ending_caption: short inner thought
                 efforts=iter([.28,.45,.85,.55,1.])
                 for scene in core:
                     if scene['action']=='exercise':scene['effort']=next(efforts)
+            contact=re.search(r'\b(sister|brother|mother|father|mum|mom|dad|friend|coach|partner|colleague)',premise.get('relationship',''),re.I)
+            for scene in core:scene['contact']=contact.group(1).upper() if contact else 'COACH' if pattern=='perseverance' else 'CONTACT'
             # Captions correspond to the opening, the consequence and the practical ending.
             direction=dict(captions=[dict(scene=3,text=texts['opening_caption']),dict(scene=27,text=texts['turn_caption']),dict(scene=len(core),text=texts['ending_caption'])],shadows=[])
-            plan=apply_direction(core,direction,title,brief,lead);plan['writer']='constrained-director-v6-'+pattern
-            saved['texts']=texts;save();return plan
+            plan=apply_direction(core,direction,title,brief,lead);plan['writer']='constrained-director-v7-'+pattern
+            saved['facts']=facts;save();return plan
         except (ValueError,KeyError,TypeError) as exc:
             if attempt==2:raise
-            texts=None;messages.append({'role':'user','content':'Rewrite the role lines to fix: '+str(exc)})
+            facts=None;messages.append({'role':'user','content':'Rewrite the role lines to fix: '+str(exc)})

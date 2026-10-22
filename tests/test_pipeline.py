@@ -168,7 +168,7 @@ class GeneralWriterContractTests(unittest.TestCase):
                 else:
                     data={k:'A different specific line '+str(i)+'.' for i,k in enumerate(required)}
                     data.update(opening_caption='The invitations had stopped.',turn_caption='That silence had hurt someone else.',ending_caption='Tomorrow would need an honest answer.')
-                    if self.pattern=='perseverance' and len(self.calls)==2:data['checkin']='How was the squat session?'
+                    if self.pattern=='perseverance' and len(self.calls)==2:data['context_line']='How was the squat session?'
                 return {'choices':[{'message':{'content':json.dumps(data)}}]}
         for pattern in PATTERNS:
             model=Model(pattern);brief='She walks outside and sends an honest answer. End at the desk, writing again.'

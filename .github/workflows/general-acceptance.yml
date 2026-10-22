@@ -1,5 +1,5 @@
 name: General writer acceptance
-# Validate a different title, consequential events and simultaneous frame layers with typed playable event codes and role-specific dialogue and constrained dramatic direction.
+# Validate a different title, consequential events and simultaneous frame layers with typed playable event codes and role-specific dialogue and constrained dramatic direction and stable speaker roles.
 on:
   workflow_dispatch:
   push:

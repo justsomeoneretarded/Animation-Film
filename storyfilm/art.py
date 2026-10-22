@@ -92,7 +92,9 @@ def insert_shot(im,scene,gender,t,progress):
         d.box((399,78,561,442),'#e9e9e1',r=16)
         d.box((455,84,505,92),'#20272c',r=4)
         received=scene['action']=='receive';sent=scene['action']=='send' and t>=send_time(text,scene.get('pretyped',False))
-        d.text((413,116),'RECEIVED' if received else 'DELETED' if scene['action']=='dismiss' and t>=.55 else 'DRAFT' if not sent else 'MESSAGE',13,'#526367')
+        status='RECEIVED' if received else 'DELETED' if scene['action']=='dismiss' and t>=.55 else 'DRAFT' if not sent else 'MESSAGE'
+        d.text((413,111 if scene.get('contact') else 116),scene.get('contact') or status,13,'#526367')
+        if scene.get('contact'):d.text((413,132),status,9,'#677775')
         d.line([(410,148),(550,148)],'#bbc6c2',1)
         chars=prop_count(scene,t);typed=text[:chars].replace('|',' ')
         if scene['action']=='dismiss' and t>.55:typed=''
@@ -102,9 +104,9 @@ def insert_shot(im,scene,gender,t,progress):
             d.box((408,175,552,bottom),'#bdcfc6',r=9)
             for j,line in enumerate(lines[:7]):d.text((417,187+j*23),line,16,'#253c43')
         if not received:
-            d.box((477,397,550,427),'#4f7c79',r=9)
+            d.box((477,397,550,427),'#4f7c79' if chars or sent else '#aab4b0',r=9)
             d.text((488,404),'SENT' if sent else 'SEND',13,'#f1f3e6')
-            if not sent and scene['action']!='dismiss' and chars<len(text):
+            if not sent and ((scene['action']=='dismiss' and t<.65) or (scene['action']!='dismiss' and chars<len(text))):
                 for row in range(2):
                     for key in range(7):d.box((411+key*20,340+row*21,426+key*20,355+row*21),'#c6cbc6',r=3)
         tap=max(0,1-abs(t-(.55 if scene['action']=='dismiss' else send_time(text,scene.get('pretyped',False))))/.20) if scene['action'] in {'send','dismiss'} else 0
