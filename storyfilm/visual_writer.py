@@ -72,13 +72,12 @@ def compile_events(data,title,brief,lead):
             gesture=('clench' if emotion=='angry' else 'fidget' if emotion in {'worried','ashamed'} else 'none') if action not in OBJECTS else 'none',
             gaze='phone' if action in OBJECTS-{'write'} else 'notebook' if action=='write' else 'ground' if low else 'camera',
             intensity=.85 if emotion in {'hurt','angry','ashamed'} else .65,
-            time='night' if i<COUNT//2 else 'dawn' if i<COUNT*3//4 else 'day',
+            time=('dawn' if i>=COUNT*3//4 and re.search(r'next morning|following morning|at dawn',brief,re.I) else 'night' if re.search(r'night|evening|dark|rain',brief,re.I) else 'day'),
             caption='',shadow='none',shadow_text='',dialogue='',voiceover='',hud='')
         s['duration']=max(5.,natural_duration(s));scenes.append(s)
         # Only consequential object events get reaction coverage; never an obligatory triplet.
-        if i%2==1 and i<COUNT-1:
+        if i%2==1 and i<COUNT-1 and action not in {'fall','getup','sleep'}:
             pose='phone' if action in OBJECTS-{'write'} else 'sit' if action=='write' or action=='sit' else 'idle'
-            if action in {'fall','sleep','getup'}:pose=action
             reaction={**s,'action':pose,'shot':'reaction','prop_text':'','event':'Reacts to the preceding event.',
                 'duration':1.8,'emotion_from':previous,'gaze':'ground' if low else 'camera','change':'The preceding consequence registers in the face and posture.'}
             scenes.append(reaction)

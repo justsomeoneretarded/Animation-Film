@@ -309,6 +309,6 @@ def stage(scene,gender,title,t,duration,index,total,subtitle=''):
     if .18<=p<=.88:label(im,scene.get('shadow_text',''),230,color='#ed8279',size=32,width=560,cx=1580)
     hud=scene.get('hud','')
     if hud:ImageDraw.Draw(im).text((76,40),hud,font=font(28),fill='#dcd6c7')
-    if index==total-1 and p>.75:
-        im=Image.blend(im,Image.new('RGBA',im.size,'#111720'),envelope(p,.75,1))
+    if index==total-1 and t>duration-.65:
+        im=Image.blend(im,Image.new('RGBA',im.size,'#111720'),envelope(t,duration-.65,duration))
     return im.convert('RGB')

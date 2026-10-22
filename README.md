@@ -25,16 +25,18 @@ For the included, deliberately written example:
 
 That exact phrase (or `sample: depressed`) selects the included **30-shot, 3:30 example**. Change to `Female lead` to use the other protagonist. Other brief text does not rewrite this example; omit those phrases for the general writer.
 
-## Shared v4 engine — applies to every new film
+## Shared v5 engine — applies to every new film
 
 The reference study informed the shared renderer and general AI writer, not a title-specific visual patch.
 
 - **Characters:** original rounded bodies and substantial curved limbs, short visible necks, small dark eyes, expressive brows/mouths. Bald male; female with hair. One selected human protagonist per film. A symbolic shadow can appear; supporting human characters are not implemented.
 - **Acting:** planted idle poses, restrained breathing, emotional posture changes, walking with stance/swing phases, seated phone handling, typing/sending/receiving, notebook writing, reaching, knocking at the street door, a controlled barbell rep, falling and getting up. Actions have preparation, contact and recovery phases instead of unrelated arm waving.
-- **Story:** the CPU Qwen3 4B writer first plans the complete arc, then writes twelve consequential events in one pass. The editor expands each event into setup, action and reaction for 36 shots, followed by sparse text direction. Each event specifies a playable action, location, emotion and actual object text. Scene descriptions are compiled from the animated actions; they cannot claim writing while the character is merely sitting. The text director adds only 4–6 story captions and at most four distinct shadow lines. The compiler assigns supported action/location pairs and readable object inserts. Explicit writing, walking, sending and ending requests constrain the event plan. Remaining invalid data is retried. There is no 400-word narration quota.
-- **Editing:** explicit wide, close, reaction and object-insert shots. No automatic halfway cut or perpetual zoom. Shot lengths are fitted proportionally to 210 seconds and quantized to 12 FPS.
+- **Story:** the CPU Qwen3 4B writer plans a specific relationship, trigger, failed attempt, consequence, contradiction, costly choice and payoff. It writes **32 causal events**, each with a concrete change in information, stakes or behavior. At most nine events may be passive poses or gestures. Only selected events get a short reaction shot; there are no automatic three-shot triplets. Generic affirmations and repeated messages are rejected or discouraged. Writing quality still needs human review.
+- **Editing:** explicit wide, close, reaction and object-insert shots. No automatic halfway cut or perpetual zoom. New general films use natural shot lengths and must fit 180–240 seconds without proportional stretching. Actions use real seconds independently of shot length. Walking moves at a fixed speed; a reach takes about a second, and standing about 1.25 seconds.
+- **Typing and props:** portrait phones use a consistent modern handset ratio. Text enters at eleven characters per second with short burst pauses; notebook writing uses fifteen. Sending occurs after the full message, followed by a readable hold. The notebook hand withdraws when finished.
+- **Emotion:** hurt, anger, shame and relief join sadness, worry, fatigue, determination and happiness. Gaze, gesture and intensity are separate performance layers. Tears, eye aversion, hand tension and fidgeting can accompany an action.
 - **Text:** brief white story captions, protagonist dialogue, red shadow lines, phone/notebook text and optional time/day labels are separate fields with separate timing. Receiving a message does not show a SENT label.
-- **Environments:** sparse, clear bedroom, desk, street, park, gym and rooftop sets; night/day lighting, furniture contact, repeatable layouts and optional room clutter, rain and snow.
+- **Environments:** sparse, clear bedroom, desk, street, park, gym and rooftop sets; night/day lighting, furniture contact, repeatable layouts and optional room clutter, rain and snow. Indoor wall clocks and digital bedroom clocks advance with world time; weather remains continuous across cuts.
 - **Shadow:** can loom, shrink or crack as part of a character choice. Its dialogue is optional.
 - **Audio:** text-led by default, with an original ambient score and scene foley. Footsteps follow the walking cycle; writing, notification, send, knock and fall sounds follow action phases. Optional short `voiceover` lines use local Piper; no voice model is downloaded when there are no spoken lines.
 
@@ -42,9 +44,9 @@ This remains procedural 2D animation with a finite rig and set library. It does 
 
 ## Outputs
 
-`film.mp4`, editable `story.json`, `screenplay.md`, `timeline.json`, `storyboard.jpg`, `characters.png`, `captions.srt`, `narration.wav` and `report.json`.
+`film.mp4`, editable `story.json`, `screenplay.md`, `timeline.json`, **`frames.jsonl`**, `storyboard.jpg`, `characters.png`, `captions.srt`, `narration.wav` and `report.json`.
 
-The Markdown screenplay and JSON timeline describe the exact staged shots. Story text can overlap intentionally in separate visual layers; the SRT is a convenience export. The MP4 contains the designed text layers. [Character designs](examples/characters.png) · [Read the example screenplay](examples/Depressed.md) · [Storyboard](examples/storyboard.jpg) · [Watch the verified sample](examples/sample.mp4). These examples use the shared v4 engine. The repository sample and workflow films are both 1920×1080 at 12 FPS.
+The Markdown screenplay and JSON timeline describe the staged shots, story changes and simultaneous performance/environment layers. `frames.jsonl` contains one record for every output frame: character action phase, emotion, gaze, gesture, typing/sent state, camera, weather phase, clock time and sound cues. This is generated from timed tracks, rather than asking a language model to invent thousands of unrelated frames. Story text can overlap intentionally in separate visual layers; the SRT is a convenience export. The MP4 contains the designed text layers. [Character designs](examples/characters.png) · [Read the example screenplay](examples/Depressed.md) · [Storyboard](examples/storyboard.jpg) · [Watch the verified sample](examples/sample.mp4). The repository example is an archived v4 film; it does not demonstrate the latest timing and writing. New workflow runs use v5. The repository sample and workflow films are both 1920×1080 at 12 FPS.
 
 ## Free execution
 
@@ -73,7 +75,7 @@ Edit `story.json` and render without replanning:
 python -m storyfilm.render --title "Revised Film" --brief "My edited original story." --plan output/story.json --out revised
 ```
 
-Keep `mode: text-led` and `version: 4`. Each shot needs `event`, `location`, `action`, `emotion`, and a 2–14 second `duration`; optional fields include `emotion_from`, `shot`, `time`, `state`, `weather` (`clear/rain/snow`), `caption`, `dialogue`, `prop_text`, `shadow`, `shadow_text`, `hud`, and `voiceover`. Production target is 180–240 seconds; use enough distinct material to fit naturally. The writer defaults to 210 seconds. Saved older narrated plans remain readable and use the new shared artwork.
+Keep `mode: text-led`. New plans use `version: 5` and `pacing: natural`; older version 4 plans remain readable. Each shot needs `event`, `location`, `action`, `emotion`, and a 1.25–14 second `duration`; optional fields include `emotion_from`, `shot`, `time`, `state`, `weather` (`clear/rain/snow`), `caption`, `dialogue`, `prop_text`, `shadow`, `shadow_text`, `hud`, and `voiceover`. Production target is 180–240 seconds; use enough distinct material to fit naturally. The general writer uses the natural sum of its shots, between 180 and 240 seconds. The authored legacy example remains 210 seconds. Saved older narrated plans remain readable and use the new shared artwork.
 
 For a shorter preview, add `--preview --height 540 --voice none`. The explicit `--planner template` path is a debug tool that preserves input sentences; it is not the production story writer.
 

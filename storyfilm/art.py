@@ -5,7 +5,7 @@ Geometry is authored in 960x540 logical units; every path and stroke is drawn at
 """
 import math
 import random
-from .motion import text_count, send_time, PHONE_BOUNDS
+from .motion import text_count, send_time, text_finished, PHONE_BOUNDS
 from functools import lru_cache
 from PIL import Image, ImageDraw, ImageFont, ImageFilter
 
@@ -130,7 +130,8 @@ def insert_shot(im,scene,gender,t,progress):
         pen_lines=wrapped(written,810,34)
         last=pen_lines[-1] if pen_lines else ''
         measured=ImageDraw.Draw(im).textlength(last,font=font(34))/S
-        tipx=min(690,268+measured);tipy=247+max(0,len(pen_lines)-1)*25
+        retreat=smooth(0,1,(t-text_finished(text,'write')-.2)/.5) if text else 0
+        tipx=min(690,268+measured)+retreat*35;tipy=247+max(0,len(pen_lines)-1)*25+retreat*95
         px=tipx+13;py=tipy-49
         capsule(d,(744,542),(px+79,py+50),54,sleeve)
         d.ellipse((px-9,py-5,px+83,py+67),skin,INK,3)
