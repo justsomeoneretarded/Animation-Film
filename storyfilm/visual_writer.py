@@ -120,10 +120,11 @@ def compile_events(data,title,brief,lead):
             caption='',shadow='none',shadow_text='',dialogue='',voiceover='',hud='')
         s['duration']=max(5.,natural_duration(s));scenes.append(s)
         # Only consequential object events get reaction coverage; never an obligatory triplet.
-        if i%2==1 and i<COUNT-1 and action not in {'fall','getup','sleep'}:
+        if i%2==1 and i<COUNT-1:
             pose='phone' if action in OBJECTS-{'write'} else 'sit' if action=='write' or action=='sit' else 'idle'
+            if action in {'fall','sleep'}:pose=action
             reaction={**s,'action':pose,'shot':'reaction','prop_text':'','pretyped':False,'event':'Reacts to the preceding event.',
-                'duration':1.8,'emotion_from':previous,'gaze':'ground' if low else 'camera','change':'The preceding consequence registers in the face and posture.'}
+                'duration':1.8,'hold_at':.8 if action=='fall' else 1.5 if action=='sleep' else None,'emotion_from':emotion,'gaze':'ground' if low else 'camera','change':'The preceding consequence registers in the face and posture.'}
             scenes.append(reaction)
         previous=emotion
     if passive>9:raise ValueError('Too many passive events; at least 23 events must advance physical attempts or object interactions')

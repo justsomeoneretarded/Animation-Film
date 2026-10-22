@@ -51,7 +51,7 @@ def natural_duration(scene):
 
 def frame_state(scene,t,absolute=0,duration=6):
     action=scene['action'];text=scene.get('prop_text','');ambient=scene.get('ambient_start',0)+t
-    return {'character':{'action':action,'phase':round(action_progress(action,t),3),
+    return {'character':{'action':action,'phase':round(action_progress(action,scene.get('hold_at',t) if scene.get('hold_at') is not None else t),3),
         'emotion_from':scene.get('emotion_from',scene['emotion']),'emotion':scene['emotion'],
         'emotion_mix':round(max(0,min(1,(t-.15)/.65)),3),'intensity':scene.get('intensity',.7),
         'gaze':scene.get('gaze','phone' if action in {'phone','send','receive','dismiss'} else 'notebook' if action=='write' else 'ground'),

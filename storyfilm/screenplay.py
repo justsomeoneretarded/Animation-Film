@@ -51,6 +51,10 @@ def validate_screenplay(plan,title,brief,lead):
         for key,allowed,default in [('gaze',{'phone','notebook','window','ground','camera','door'},'phone' if s['action'] in {'phone','send','receive','dismiss'} else 'notebook' if s['action']=='write' else 'ground'),('gesture',{'none','fidget','clench','wipe_tear'},'none')]:
             s[key]=raw.get(key,default)
             if s[key] not in allowed:raise ValueError('Invalid performance layer '+key)
+        hold=raw.get('hold_at')
+        if hold is not None:
+            if not isinstance(hold,(int,float)) or not math.isfinite(hold) or hold<0:raise ValueError('Invalid held action phase')
+            s['hold_at']=float(hold)
         s['pretyped']=raw.get('pretyped',False)
         if not isinstance(s['pretyped'],bool):raise ValueError('pretyped must be boolean')
         s['intensity']=float(raw.get('intensity',.7))

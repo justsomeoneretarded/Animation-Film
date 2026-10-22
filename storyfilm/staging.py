@@ -267,7 +267,7 @@ def stage(scene,gender,title,t,duration,index,total,subtitle=''):
     shadow_actor(im,x+151,floor,t,p,sh,scene.get('shadow_size',1.))
     d=Draw(im);d.ellipse((x-67,floor-4,x+70,floor+12),'#19212a')
     seated=act in {'sit','phone','send','receive','write'} and loc in {'park','bedroom','desk'}
-    pose=actor(im,x,floor,t,gender,act,scene['emotion'],scale,progress=action_progress(act,t),walk_speed=WALK_SPEED/scale,emotion_from=scene.get('emotion_from'),seated=seated,gaze_target=scene.get('gaze'),gesture=scene.get('gesture','none'),intensity=scene.get('intensity',.7),send_at=send_time(scene.get('prop_text',''),scene.get('pretyped',False)),write_until=text_finished(scene.get('prop_text',''),'write'))
+    pose=actor(im,x,floor,t,gender,act,scene['emotion'],scale,progress=action_progress(act,scene.get('hold_at',t) if scene.get('hold_at') is not None else t),walk_speed=WALK_SPEED/scale,emotion_from=scene.get('emotion_from'),seated=seated,gaze_target=scene.get('gaze'),gesture=scene.get('gesture','none'),intensity=scene.get('intensity',.7),send_at=send_time(scene.get('prop_text',''),scene.get('pretyped',False)),write_until=text_finished(scene.get('prop_text',''),'write'))
     d=Draw(im)
     if loc=='desk':
         d.box((342,381,804,400),'#a38b6d',EDGE,3,r=5)
