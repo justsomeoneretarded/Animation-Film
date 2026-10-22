@@ -25,7 +25,7 @@ def validate_screenplay(plan,title,brief,lead):
             if not isinstance(value,str) or len(value)>limit:raise ValueError(f'Shot {i+1}: {key} too long or not text')
             s[key]=' '.join(value.split())
         outdoors=s['location'] in {'street','park','rooftop'}
-        weather='snow' if outdoors and re.search(r'\bsnow\w*|\bwinter\b|\bblizzard\b',title+' '+brief,re.I) else 'rain' if (outdoors and re.search(r'\brain\w*|\bstorm\b',brief,re.I)) or (not outdoors and s['time']=='night') else 'clear'
+        weather='clear' if re.search(r'clear (?:sky|weather|night)|no rain|not raining|dry weather',brief,re.I) else 'snow' if re.search(r'\bsnow\w*|\bwinter\b|\bblizzard\b',title+' '+brief,re.I) else 'rain' if re.search(r'\brain\w*|\bstorm\b',brief,re.I) else 'clear'
         s['weather']=raw.get('weather',weather)
         if s['weather'] not in {'clear','rain','snow'}:raise ValueError('Invalid weather')
         if not s['event']:raise ValueError(f'Shot {i+1} needs a concrete event')

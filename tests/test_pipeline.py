@@ -224,6 +224,16 @@ class EnvironmentContactTests(unittest.TestCase):
         self.assertTrue(all(s['state']=='clutter' for s in bedroom))
 
 class WeatherTests(unittest.TestCase):
+    def test_setting_words_do_not_match_training_or_force_rain_at_night(self):
+        from storyfilm.visual_writer import setting_time
+        self.assertEqual(setting_time('Training','Morning training.'),'dawn')
+        self.assertEqual(setting_time('Training','He trains again.'),'day')
+        self.assertEqual(setting_time('Late Night','He trains again.'),'night')
+        p=depression_plan('A quiet night','Male lead. A clear night, no rain.')
+        self.assertTrue(all(s['weather']=='clear' for s in p['scenes']))
+        winter=depression_plan('Winter','Male lead. Snow falls outside.')
+        self.assertTrue(all(s['weather']=='snow' for s in winter['scenes']))
+
     def test_winter_brief_defaults_to_visible_outdoor_snow(self):
         p=depression_plan('Winter Arc','Male lead. A snowy winter walk.')
         self.assertTrue(all(s['weather']=='snow' for s in p['scenes'] if s['location'] in {'street','park'}))

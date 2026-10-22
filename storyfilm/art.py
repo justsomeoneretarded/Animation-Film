@@ -5,7 +5,7 @@ Geometry is authored in 960x540 logical units; every path and stroke is drawn at
 """
 import math
 import random
-from .motion import text_count, send_time, text_finished, prop_count, PHONE_BOUNDS
+from .motion import text_count, send_time, text_finished, prop_count, PHONE_BOUNDS, PHONE_ZOOM
 from functools import lru_cache
 from PIL import Image, ImageDraw, ImageFont, ImageFilter
 
@@ -29,15 +29,15 @@ def wrapped(text,width,size):
     return lines+([line] if line else [])
 
 class Draw:
-    def __init__(self,im,dy=0):self.d=ImageDraw.Draw(im);self.dy=dy
+    def __init__(self,im,dy=0,scale=S):self.d=ImageDraw.Draw(im);self.dy=dy;self.scale=scale
     def box(self,b,fill,outline=None,width=1,r=0):
-        b=tuple(round((v+(self.dy if i%2 else 0))*S) for i,v in enumerate(b))
-        if r:self.d.rounded_rectangle(b,round(r*S),fill=fill,outline=outline,width=max(1,round(width*S)))
-        else:self.d.rectangle(b,fill=fill,outline=outline,width=max(1,round(width*S)))
-    def ellipse(self,b,fill,outline=None,width=1):self.d.ellipse(tuple(round((v+(self.dy if i%2 else 0))*S) for i,v in enumerate(b)),fill=fill,outline=outline,width=max(1,round(width*S)))
-    def line(self,p,fill,width=1):self.d.line([(round(x*S),round((y+self.dy)*S)) for x,y in p],fill=fill,width=max(1,round(width*S)),joint='curve')
-    def polygon(self,p,fill):self.d.polygon([(round(x*S),round((y+self.dy)*S)) for x,y in p],fill=fill)
-    def text(self,p,text,size=14,fill='#dce5ee',stroke=0):self.d.text((round(p[0]*S),round((p[1]+self.dy)*S)),text,font=font(size*S),fill=fill,stroke_width=round(stroke*S),stroke_fill=INK)
+        b=tuple(round((v+(self.dy if i%2 else 0))*self.scale) for i,v in enumerate(b))
+        if r:self.d.rounded_rectangle(b,round(r*self.scale),fill=fill,outline=outline,width=max(1,round(width*self.scale)))
+        else:self.d.rectangle(b,fill=fill,outline=outline,width=max(1,round(width*self.scale)))
+    def ellipse(self,b,fill,outline=None,width=1):self.d.ellipse(tuple(round((v+(self.dy if i%2 else 0))*self.scale) for i,v in enumerate(b)),fill=fill,outline=outline,width=max(1,round(width*self.scale)))
+    def line(self,p,fill,width=1):self.d.line([(round(x*self.scale),round((y+self.dy)*self.scale)) for x,y in p],fill=fill,width=max(1,round(width*self.scale)),joint='curve')
+    def polygon(self,p,fill):self.d.polygon([(round(x*self.scale),round((y+self.dy)*self.scale)) for x,y in p],fill=fill)
+    def text(self,p,text,size=14,fill='#dce5ee',stroke=0):self.d.text((round(p[0]*self.scale),round((p[1]+self.dy)*self.scale)),text,font=font(size*self.scale),fill=fill,stroke_width=round(stroke*self.scale),stroke_fill=INK)
     def path(self,commands,fill,outline=None,width=1):
         pts=[];cur=(0,0)
         for c in commands:
@@ -82,7 +82,9 @@ def gradient(size,top,bottom):
 def insert_shot(im,scene,gender,t,progress):
     """Hand-and-object inserts communicate an action, not a decorative zoom."""
     im=im.filter(ImageFilter.GaussianBlur(18));veil=Image.new('RGBA',im.size,(12,22,33,70));im.alpha_composite(veil)
-    d=Draw(im);skin='#e5d7bf';sleeve='#7f8d93' if gender=='male' else '#a18e98'
+    zoom=PHONE_ZOOM if scene['action'] in {'phone','send','receive','dismiss'} else 1.
+    if zoom!=1:im=im.resize((round(W*zoom),round(H*zoom)),Image.Resampling.LANCZOS)
+    d=Draw(im,scale=S*zoom);skin='#e5d7bf';sleeve='#7f8d93' if gender=='male' else '#a18e98'
     text=scene.get('prop_text','')
     if scene['action'] in {'phone','send','receive','dismiss'}:
         capsule(d,(320,558),(375,370),51,sleeve)
@@ -142,6 +144,9 @@ def insert_shot(im,scene,gender,t,progress):
         capsule(d,(px+48,py+30),(px+9,py+5),22,skin)
         capsule(d,(218,550),(265,399),52,sleeve)
         d.ellipse((243,363,309,439),skin,INK,3)
+    if zoom!=1:
+        left=round((im.width-W)/2);top=round(520*zoom-H/2)
+        im=im.crop((left,top,left+W,top+H))
     return im
 
 

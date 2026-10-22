@@ -51,6 +51,17 @@ def event_codes():
     return codes
 EVENT_CODES=event_codes()
 
+def setting_time(title,brief,index=0):
+    next_morning=bool(re.search(r'next morning|following morning|at dawn',brief,re.I))
+    if next_morning and index>=COUNT*3//4:return 'dawn'
+    clean=re.sub(r'next morning|following morning|at dawn','',brief,flags=re.I)
+    def explicit(text):
+        if re.search(r'\b(?:morning|dawn|sunrise)\b',text,re.I):return 'dawn'
+        if re.search(r'\b(?:night|evening|midnight|overnight|darkness|dark)\b',text,re.I):return 'night'
+        if re.search(r'\b(?:daytime|daylight|afternoon|noon)\b',text,re.I):return 'day'
+        return None
+    return explicit(clean) or explicit(title) or 'day'
+
 def compile_events(data,title,brief,lead):
     if set(data)!={f'beat_{i+1}' for i in range(COUNT)}:raise ValueError(f'Write exactly {COUNT} events')
     scenes=[];counts=Counter();texts=Counter();previous='neutral';passive=0;draft=''
@@ -81,7 +92,7 @@ def compile_events(data,title,brief,lead):
             gesture=('clench' if emotion=='angry' else 'fidget' if emotion in {'worried','ashamed'} else 'none') if action not in OBJECTS else 'none',
             gaze='phone' if action in OBJECTS-{'write'} else 'notebook' if action=='write' else 'ground' if low else 'camera',
             intensity=.85 if emotion in {'hurt','angry','ashamed'} else .65,
-            time=('dawn' if i>=COUNT*3//4 and re.search(r'next morning|following morning|at dawn',brief,re.I) else 'night' if re.search(r'night|evening|dark|rain',brief,re.I) else 'day'),
+            time=setting_time(title,brief,i),
             caption='',shadow='none',shadow_text='',dialogue='',voiceover='',hud='')
         s['duration']=max(3. if action=='dismiss' else 5.,natural_duration(s));scenes.append(s)
         # Only consequential object events get reaction coverage; never an obligatory triplet.

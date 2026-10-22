@@ -244,7 +244,7 @@ def label(im,text,y=70,color='#f4f1e5',size=36,width=1540,bubble=False,cx=None):
 def stage(scene,gender,title,t,duration,index,total,subtitle=''):
     p=t/max(.001,duration);ambient=scene.get('ambient_start',0)+t;loc=scene['location'];act=scene['action'];day=scene.get('time','night')
     im=set_design(loc,day,scene.get('state','normal')).copy()
-    weather=scene.get('weather','rain' if loc in {'bedroom','desk'} and day=='night' else 'clear')
+    weather=scene.get('weather','clear')
     outdoors=loc in {'street','park','rooftop'}
     if weather=='snow' and outdoors:
         sd=Draw(im)
@@ -291,6 +291,10 @@ def stage(scene,gender,title,t,duration,index,total,subtitle=''):
             a=k*math.pi/6;d.line([(cx+26*math.sin(a),cy-26*math.cos(a)),(cx+29*math.sin(a),cy-29*math.cos(a))],EDGE,1)
         for angle,length,color,width in [(seconds/43200*2*math.pi,15,EDGE,2.5),(seconds/3600*2*math.pi,23,EDGE,1.5),(int(seconds)/60*2*math.pi,25,'#a2534e',.8)]:
             d.line([(cx,cy),(cx+length*math.sin(angle),cy-length*math.cos(angle))],color,width)
+    if loc in {'bedroom','desk'} and weather=='snow':
+        for k in range(18):
+            xx=130+(k*31+ambient*(3+k%3))%145;yy=120+(k*47+ambient*(12+k%4))%178
+            d.ellipse((xx-1,yy-1,xx+1,yy+1),'#d4dce0')
     # Framing is a screenplay choice, never an automatic halfway cut.
     if shot in {'close','reaction'}:
         z=1.85;cw,ch=W/z,H/z;cx=x*S;cy=229*S
@@ -303,7 +307,9 @@ def stage(scene,gender,title,t,duration,index,total,subtitle=''):
         ip=1 if act=='receive' else p
         im=insert_shot(im,detail,gender,t,ip)
     caption=scene.get('caption',subtitle)
-    if .08<=p<=.91:label(im,caption,930 if shot=='insert' else 60,size=36)
+    if .08<=p<=.91:
+        if shot=='insert' and act in {'phone','send','receive','dismiss'}:label(im,caption,300,size=36,width=560,cx=330)
+        else:label(im,caption,930 if shot=='insert' else 60,size=36)
     text=scene.get('dialogue','')
     if .25<=p<=.88:label(im,text,810,size=36,bubble=True)
     if .18<=p<=.88:label(im,scene.get('shadow_text',''),230,color='#ed8279',size=32,width=560,cx=1580)

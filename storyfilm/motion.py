@@ -10,6 +10,7 @@ def walk_weight(t):return max(0,min(1,(WALK_SECONDS-t)/.4))
 ACTION_SECONDS={'walk':WALK_SECONDS,'idle':1.2,'sit':1.1,'stand':1.25,'sleep':1.5,'phone':.75,'receive':.65,
  'send':1.0,'write':1.5,'exercise':3.2,'reach':1.0,'knock':1.25,'fall':.8,'getup':2.1,
  'lookaway':.7,'clench':.8,'wipe_tear':1.4,'dismiss':.7}
+PHONE_ZOOM=1.35
 PHONE_BOUNDS=(390,65,570,455) # logical units: modern portrait handset, 0.462 aspect ratio
 TYPE_RATE=11.0
 WRITE_RATE=15.0
@@ -62,6 +63,8 @@ def frame_state(scene,t,absolute=0,duration=6):
         'environment':{'weather':scene.get('weather','clear'),'phase_seconds':round(ambient,3),
             'clock_seconds':round(scene.get('clock_minutes',22*60)*60+ambient,3),
             'window_rain':scene.get('weather')=='rain' and scene['location'] in {'bedroom','desk'},
+            'window_snow':scene.get('weather')=='snow' and scene['location'] in {'bedroom','desk'},
             'light':scene.get('time','night')},
         'audio':{'rain':scene.get('weather')=='rain','clock_tick':scene['location'] in {'bedroom','desk','gym'} and ambient%1<1/12,'foot_contact':action=='walk' and t<WALK_SECONDS and (t%(math.pi/WALK_PHASE))<1/12,'send_tap':action=='send' and 0<=t-send_time(text,scene.get('pretyped',False))<1/12},
+        'camera_zoom':PHONE_ZOOM if scene.get('shot')=='insert' and action in {'phone','send','receive','dismiss'} else 1.,
         'camera':scene.get('shot','wide'),'time':round(absolute,3)}
