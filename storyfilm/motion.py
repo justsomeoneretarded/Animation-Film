@@ -43,6 +43,7 @@ def walk_position(t):
 def natural_duration(scene):
     action=scene['action'];text=scene.get('prop_text','')
     if scene.get('shot')=='reaction':return 1.8
+    if action=='dismiss':return 2.4
     if scene.get('shot')=='insert':
         read=1.0+len(text.split())/3.2
         return min(13,max(3.2,read if action=='receive' else .7+read if scene.get('pretyped') else text_finished(text,action)+read*.55+.5))
@@ -53,7 +54,7 @@ def frame_state(scene,t,absolute=0,duration=6):
     action=scene['action'];text=scene.get('prop_text','');ambient=scene.get('ambient_start',0)+t
     return {'character':{'action':action,'phase':round(action_progress(action,scene.get('hold_at',t) if scene.get('hold_at') is not None else t),3),
         'emotion_from':scene.get('emotion_from',scene['emotion']),'emotion':scene['emotion'],
-        'emotion_mix':round(max(0,min(1,(t-.15)/.65)),3),'intensity':scene.get('intensity',.7),
+        'emotion_mix':round(max(0,min(1,(t-.15)/.65)),3),'effort':scene.get('effort',1.),'intensity':scene.get('intensity',.7),
         'gaze':scene.get('gaze','phone' if action in {'phone','send','receive','dismiss'} else 'notebook' if action=='write' else 'ground'),
         'gesture':scene.get('gesture','none'),'walk_x':round(walk_position(t),2) if action=='walk' else None},
         'prop':{'visible_characters':prop_count(scene,t),'sent':action=='send' and t>=send_time(text,scene.get('pretyped',False)),

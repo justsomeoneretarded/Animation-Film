@@ -57,6 +57,8 @@ def validate_screenplay(plan,title,brief,lead):
             s['hold_at']=float(hold)
         s['pretyped']=raw.get('pretyped',False)
         if not isinstance(s['pretyped'],bool):raise ValueError('pretyped must be boolean')
+        s['effort']=float(raw.get('effort',1.))
+        if not math.isfinite(s['effort']) or not 0<=s['effort']<=1:raise ValueError('Effort must be 0–1')
         s['intensity']=float(raw.get('intensity',.7))
         if not math.isfinite(s['intensity']) or not 0<=s['intensity']<=1:raise ValueError('Emotion intensity must be 0–1')
         s['ambient_start']=float(raw.get('ambient_start',ambient_cursor))

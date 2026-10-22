@@ -157,39 +157,40 @@ class VisualScreenplayTests(unittest.TestCase):
 
 class GeneralWriterContractTests(unittest.TestCase):
     def test_complete_arc_action_binding_sparse_text_and_checkpoint(self):
-        from storyfilm.visual_writer import write,COUNT,beat_schema,EVENT_CODES
+        from storyfilm.visual_writer import write
+        from storyfilm.director import PATTERNS
         class Model:
-            def __init__(self):self.calls=[]
+            def __init__(self,pattern):self.calls=[];self.pattern=pattern
             def create_chat_completion(self,**request):
                 self.calls.append(request);required=request['response_format']['schema']['required']
-                if 'sequence_1' in required:data={k:'A specific cause and consequence.' for k in required}
-                elif 'slot_1' in required:
-                    data={}
-                    for key,prop in request['response_format']['schema']['properties'].items():
-                        choices=prop['enum'];order=['read_message','draft_message','write_note','send_message','walk','rise_from_seat','delete_draft','clench']
-                        data[key]=min(choices,key=lambda k:next((i for i,v in enumerate(order) if k.startswith(v+'__')),99))
-                elif 'beat_1' in required:
-                    data={}
-                    for i in range(COUNT):
-                        kind=request['response_format']['schema']['properties'][f'beat_{i+1}']['properties']['event']['enum'][0]
-                        action,location=EVENT_CODES[kind]
-                        data[f'beat_{i+1}']=dict(event=kind,emotion=['hurt','angry','ashamed','relieved'][i//8],prop_text=f'Words {i}.' if action in {'phone','send','receive','write','dismiss'} else '---',change='New specific information changes the next decision '+str(i))
-                    if len(self.calls)==10:data.pop('beat_32')
-                else:data=dict(captions=[dict(scene=i,text=t) for i,t in [(1,'The invitations had stopped.'),(10,'An easy answer would have been another lie.'),(24,'That silence had hurt someone else.'),(47,'Tomorrow would require an honest answer.')]],shadows=[dict(scene=2,text='Leave it unanswered.'),dict(scene=20,text='They will misunderstand.')])
+                if 'pattern' in required:
+                    data={k:'A specific concrete detail.' for k in required};data['pattern']=self.pattern
+                else:
+                    data={k:'A different specific line '+str(i)+'.' for i,k in enumerate(required)}
+                    data.update(opening_caption='The invitations had stopped.',turn_caption='That silence had hurt someone else.',ending_caption='Tomorrow would need an honest answer.')
                 return {'choices':[{'message':{'content':json.dumps(data)}}]}
-        model=Model();brief='She walks outside and sends an honest answer. End at the desk, writing again.'
-        with tempfile.TemporaryDirectory() as directory:
-            diagnostic=Path(directory)/'writer.txt';p=write(model,'A completely different title',brief,'female',diagnostic)
-            self.assertEqual(write(model,'A completely different title',brief,'female',diagnostic),p)
-        self.assertEqual(len(model.calls),12);self.assertEqual(len(p['scenes']),47)
-        self.assertEqual(p['pacing'],'natural');self.assertAlmostEqual(sum(x['duration'] for x in p['scenes']),p['target_seconds'])
-        self.assertEqual(p['scenes'][-1]['action'],'write');self.assertEqual(p['scenes'][-1]['location'],'desk')
-        self.assertEqual(sum(bool(x['caption']) for x in p['scenes']),4)
-        self.assertEqual(sum(x['shot']!='reaction' for x in p['scenes']),32)
-        required=beat_schema(brief)['properties']
-        self.assertTrue(all(EVENT_CODES[k][0]=='send' for k in required['beat_25']['properties']['event']['enum']))
-        self.assertEqual(required['beat_32']['properties']['event']['enum'],['write_note__desk'])
-        self.assertFalse(any(k=='walk__bedroom' for x in required.values() for k in x['properties']['event']['enum']))
+        for pattern in PATTERNS:
+            model=Model(pattern);brief='She walks outside and sends an honest answer. End at the desk, writing again.'
+            with tempfile.TemporaryDirectory() as directory:
+                diagnostic=Path(directory)/'writer.txt';p=write(model,'A completely different title',brief,'female',diagnostic)
+                self.assertEqual(write(model,'A completely different title',brief,'female',diagnostic),p)
+            self.assertEqual(len(model.calls),2);self.assertEqual(len(p['scenes']),47)
+            self.assertEqual(p['pacing'],'natural');self.assertAlmostEqual(sum(x['duration'] for x in p['scenes']),p['target_seconds'])
+            self.assertEqual(p['scenes'][-1]['action'],'write');self.assertEqual(p['scenes'][-1]['location'],'desk')
+            self.assertEqual(sum(bool(x['caption']) for x in p['scenes']),3)
+            self.assertEqual(sum(x['shot']!='reaction' for x in p['scenes']),32)
+            self.assertTrue(all(x['action']!='walk' or x['location'] in {'street','park','rooftop'} for x in p['scenes']))
+            # Every deleted draft really existed, and sending a written draft never retypes it.
+            draft=''
+            for scene in p['scenes']:
+                if scene['shot']=='reaction':continue
+                if scene['action']=='phone':draft=scene['prop_text']
+                elif scene['action']=='dismiss':self.assertEqual(scene['prop_text'],draft);draft=''
+                elif scene['action']=='send':
+                    if scene['prop_text']==draft:self.assertTrue(scene['pretyped'])
+                    draft=''
+            if pattern=='perseverance':
+                self.assertEqual([x['effort'] for x in p['scenes'] if x['action']=='exercise'],[.28,.45,.85,.55,1.])
     def test_director_rejects_pose_captions_and_repeated_shadow_lines(self):
         from storyfilm.visual_writer import apply_direction
         core=depression_plan('Title','Male lead.')['scenes']
