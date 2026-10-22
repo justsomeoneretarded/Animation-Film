@@ -182,6 +182,9 @@ class GeneralWriterContractTests(unittest.TestCase):
             reused=write(model,'A completely different title',brief,'female',diagnostic)
             self.assertEqual(reused,p)
         self.assertEqual(len(model.calls),4);self.assertEqual(len(p['scenes']),36)
+        for i in range(12):
+            if p['scenes'][i*3+1]['action'] in {'stand','walk'}:
+                self.assertEqual(p['scenes'][i*3+2]['action'],'idle')
         self.assertEqual(p['scenes'][-1]['action'],'write');self.assertEqual(p['scenes'][-1]['location'],'desk')
         self.assertEqual(sum(bool(s['caption']) for s in p['scenes']),4)
         self.assertEqual(sum(bool(s['shadow_text']) for s in p['scenes']),2)

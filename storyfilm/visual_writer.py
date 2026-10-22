@@ -103,9 +103,13 @@ def expand_beats(data):
         if object_action and not event['prop_text'].strip():raise ValueError('Phone and notebook events need their exact visible words')
         if not object_action:event['prop_text']=''
         pose='phone' if action in {'phone','send','receive'} else 'sit' if event['location'] in {'bedroom','desk','park'} else 'idle'
-        setup={**event,'action':pose,'shot':'wide','prop_text':''}
+        setup_pose=pose;reaction_pose=pose
+        if action in {'walk','stand','exercise','reach','knock'}:
+            setup_pose='sit' if action=='stand' else 'idle'
+            reaction_pose='idle'
+        setup={**event,'action':setup_pose,'shot':'wide','prop_text':''}
         performed={**event,'shot':'insert' if object_action else 'wide'}
-        reaction={**event,'action':pose,'shot':'reaction','prop_text':''}
+        reaction={**event,'action':reaction_pose,'shot':'reaction','prop_text':''}
         # Finish on the requested action, rather than adding a neutral pose after it.
         shots=[setup,performed,reaction] if i<11 else [setup,reaction,performed]
         for j,shot in enumerate(shots):result[f'scene_{i*3+j+1}']=shot
@@ -206,7 +210,10 @@ def write(model,title,brief,lead,diagnostics_path=None):
         saved['outline']=outline;save()
     core=saved.get('core')
     if core is not None:
-        try:core=compile_core({f'scene_{i+1}':{k:s[k] for k in ('action','location','shot','emotion','prop_text','time','weather')} for i,s in enumerate(core)},title,brief,lead)
+        try:
+            # Rebuild camera coverage from saved events when the editor changes.
+            events={f'beat_{i+1}':{k:core[i*3+(2 if i==11 else 1)][k] for k in ('action','location','emotion','prop_text')} for i in range(12)}
+            core=compile_core(expand_beats(events),title,brief,lead)
         except (ValueError,KeyError,TypeError):core=None;saved.pop('direction',None)
     if core is None:
         prompt=f'''Write TWELVE consequential events, beat_1 through beat_12, for ONE complete connected film.
