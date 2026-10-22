@@ -1,6 +1,7 @@
 """Original reusable dramatic structures; AI supplies specific premises and dialogue."""
 import hashlib
 import json
+import re
 from collections import Counter
 from .visual_writer import EVENT_CODES,compile_events,apply_direction
 
@@ -73,17 +74,17 @@ PURPOSES={
  'followup':'Contact asks a small practical question about the agreed meeting.',
  'yes_reply':'Lead answers that exact question, without pretending everything is cured.',
  'delay_draft':'Unsent message to a training contact: lead makes a postponement excuse.',
- 'goal_note':'Private notebook: one modest training goal involving a controlled barbell repetition.',
+ 'goal_note':'Private notebook: one modest training goal involving a controlled standing barbell curl, using the same bar throughout.',
  'excuse_note':'Private notebook: a defensive explanation after the first failed repetition.',
  'quit_draft':'Unsent message saying they want to quit after the failed attempt.',
  'reminder':'Contact asks about the agreed training session, not a motivational quotation.',
- 'adjust_note':'Private notebook: a practical adjustment to the next repetition, without adding new equipment.',
- 'practical_feedback':'Contact asks a practical training question or gives a short concrete correction; no slogans.',
+ 'adjust_note':'Private notebook: a practical cue for the next standing barbell curl: steady elbows or controlled movement. No change of weight, load or equipment.',
+ 'practical_feedback':'Contact asks a practical training question or gives a short concrete correction for a standing barbell curl; no squats, presses, weights, load changes or slogans.',
  'progress_note':'Private notebook: a truthful record of the failed attempts and one thing to try again.',
- 'checkin':'Contact asks how the session went.',
+ 'checkin':'Contact asks how the standing curl attempt went. It is not a squat, press or deadlift.',
  'honest_answer':'Lead honestly reports both a setback and returning to the attempt.',
  'response':'Contact proposes the next session, naturally and briefly.',
- 'next_note':'Private notebook: a specific plan for the next session, not a victory slogan.'}
+ 'next_note':'Private notebook: a specific plan to attempt another standing curl next session, no weight or load changes and no victory slogan.'}
 
 def write(model,title,brief,lead,diagnostics_path=None):
     identity=hashlib.sha256(json.dumps([VERSION,title,brief,lead]).encode()).hexdigest();saved={};raws=[]
@@ -104,8 +105,14 @@ def write(model,title,brief,lead,diagnostics_path=None):
         fields['pattern']={'type':'string','enum':list(PATTERNS)}
         schema=dict(type='object',properties=fields,required=list(fields),additionalProperties=False)
         saved['premise']=ask([{'role':'system','content':'Adapt the given brief into concrete, restrained drama. One visible adult; other people only through phone messages. No other visible people, food, kitchen, car, extra props, spoken calls or new actions.'},
-          {'role':'user','content':f'Title {json.dumps(title)}. Brief DATA {json.dumps(brief)}. Lead {lead}. Choose pattern: connection for loneliness/depression/reaching out; reconciliation for guilt, damaged trust, hurt caused to another person; perseverance for a training/discipline setback. Specify the relationship, a concrete missed event or training goal, the misunderstanding, its real cost and a practical next step. Ground the details in this brief. No generic truth/healing/presence language. Short phrases, not a full story.'}],schema,400);save()
+          {'role':'user','content':f'Title {json.dumps(title)}. Brief DATA {json.dumps(brief)}. Lead {lead}. Choose pattern: connection for loneliness/depression/reaching out; reconciliation for guilt, damaged trust, hurt caused to another person; perseverance for a training/discipline setback. The only supported exercise is a STANDING BARBELL CURL, not a squat, press, deadlift or weight change. Specify the relationship, a concrete missed event or training goal, the misunderstanding, its real cost and a practical next step. Ground the details in this brief. No generic truth/healing/presence language. Short phrases, not a full story.'}],schema,400);save()
     premise=saved['premise'];pattern=premise['pattern'];beats=PATTERNS[pattern]
+    unsupported=r'\b(?:squats?|press(?:es)?|deadlifts?|bench|lbs?|kg|pounds?|kilos?|load|lighter|heavier)\b|\b\d+(?:\.\d+)?\s*(?:lbs?|kg|pounds?|kilos?)\b'
+    if pattern=='perseverance':
+        if re.search(r'\b(?:squat|deadlift|bench press)\w*',brief,re.I):raise ValueError('The shared exercise rig supports standing barbell curls; the requested lift needs another rig.')
+        defaults=dict(missed_event_or_goal='One controlled standing barbell curl with the same bar throughout.',misunderstanding='An unfinished attempt feels like proof that trying is pointless.',real_cost='The lead has avoided returning after the unsuccessful attempts.',practical_plan='Return next session and attempt one controlled standing curl again.')
+        for key,value in defaults.items():
+            if re.search(unsupported,premise.get(key,''),re.I):premise[key]=value
     roles=list(dict.fromkeys(r for _,_,_,r in beats if r))
     role_schema={r:{'type':'string','minLength':3,'maxLength':60} for r in roles}
     role_schema.update({k:{'type':'string','minLength':3,'maxLength':80} for k in ['opening_caption','turn_caption','ending_caption']})
@@ -114,6 +121,7 @@ def write(model,title,brief,lead,diagnostics_path=None):
       {'role':'user','content':f'''Title {json.dumps(title)}. Brief DATA {json.dumps(brief)}. Premise {json.dumps(premise)}.
 Write the exact visible words for these roles, in their listed order: {json.dumps({r:PURPOSES[r] for r in roles})}.
 The lead and contact have a specific history; use concrete details from the premise. Every reply answers an earlier SENT message or refers to the missed event. The contact cannot read a deleted draft or a private notebook. The lead visits the street door before not_ready/not_home, then continues by message. No new visible people or objects.
+If this is a perseverance story, every exercise is a standing barbell CURL with the same bar, not a squat or press. Never mention changing weight, load, kilograms or pounds.
 One short sentence or fragment per role, preferably 4–9 words, at most60 characters. Keep role lines different; only the director repeats a draft when it is deleted or sent. Keep day/time details consistent in all scheduling lines and notes. A notebook line is private, not sent. The last eight beats handle one practical arrangement, not repeated emotional reconciliation.
 Also write opening_caption, turn_caption and ending_caption: short inner thoughts, at most14 words, each adding context rather than describing poses or repeating visible messages. No miraculous cure or unearned triumph. The ending fits the brief and the practical next step. Output only the requested fields.'''}]
     texts=saved.get('texts')
@@ -122,6 +130,7 @@ Also write opening_caption, turn_caption and ending_caption: short inner thought
             if texts is None:
                 print(f'Writing role-specific dialogue for {pattern}, attempt {attempt+1}.',flush=True)
                 texts=ask(messages,schema,1800)
+            if pattern=='perseverance' and any(re.search(unsupported,text,re.I) for text in texts.values()):raise ValueError('Only standing barbell CURLS are shown. Remove squats, presses, weight measurements, load changes and other unsupported exercise references.')
             data={};reverse={v:k for k,v in EVENT_CODES.items()}
             for i,(loc,action,emotion,role) in enumerate(beats):
                 prop=texts[role] if role else '---'

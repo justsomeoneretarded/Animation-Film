@@ -11,7 +11,7 @@ VERSION='visual-v5.2'
 EVENTS={
  'idle':'Pauses, grounded in place.', 'sit':'Sits with both feet planted.',
  'stand':'Rises from the seat.', 'sleep':'Rests on the bed.', 'walk':'Walks across the setting.',
- 'exercise':'Attempts a controlled barbell repetition.', 'reach':'Reaches toward the street door.',
+ 'exercise':'Attempts a controlled standing barbell curl.', 'reach':'Reaches toward the street door.',
  'knock':'Knocks at the street door.', 'fall':'Falls onto hands and knees.',
  'getup':'Pushes up from hands and knees.', 'phone':'Types an unsent draft.',
  'send':'Types and sends the message.', 'receive':'Reads an incoming message.',

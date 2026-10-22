@@ -168,13 +168,14 @@ class GeneralWriterContractTests(unittest.TestCase):
                 else:
                     data={k:'A different specific line '+str(i)+'.' for i,k in enumerate(required)}
                     data.update(opening_caption='The invitations had stopped.',turn_caption='That silence had hurt someone else.',ending_caption='Tomorrow would need an honest answer.')
+                    if self.pattern=='perseverance' and len(self.calls)==2:data['checkin']='How was the squat session?'
                 return {'choices':[{'message':{'content':json.dumps(data)}}]}
         for pattern in PATTERNS:
             model=Model(pattern);brief='She walks outside and sends an honest answer. End at the desk, writing again.'
             with tempfile.TemporaryDirectory() as directory:
                 diagnostic=Path(directory)/'writer.txt';p=write(model,'A completely different title',brief,'female',diagnostic)
                 self.assertEqual(write(model,'A completely different title',brief,'female',diagnostic),p)
-            self.assertEqual(len(model.calls),2);self.assertEqual(len(p['scenes']),47)
+            self.assertEqual(len(model.calls),3 if pattern=='perseverance' else 2);self.assertEqual(len(p['scenes']),47)
             self.assertEqual(p['pacing'],'natural');self.assertAlmostEqual(sum(x['duration'] for x in p['scenes']),p['target_seconds'])
             self.assertEqual(p['scenes'][-1]['action'],'write');self.assertEqual(p['scenes'][-1]['location'],'desk')
             self.assertEqual(sum(bool(x['caption']) for x in p['scenes']),3)

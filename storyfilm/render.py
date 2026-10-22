@@ -108,6 +108,7 @@ def main():
     p.add_argument('--out',type=Path,default=Path('output'))
     p.add_argument('--height',type=int,choices=[540,720,1080],default=1080)
     p.add_argument('--fps',type=int,choices=[12,24,30],default=12)
+    p.add_argument('--plan-only',action='store_true',help='Export the editable plan and storyboard before audio/video rendering')
     p.add_argument('--preview',action='store_true',help='Short silent preview; cuts scene durations to 25 percent')
     p.add_argument('--allow-template-fallback',action='store_true',help='Explicitly permit basic offline planning if AI fails')
     args=p.parse_args()
@@ -136,6 +137,9 @@ def main():
     (args.out/'story.json').write_text(json.dumps(plan,indent=2,ensure_ascii=False))
     print(f"Planned {len(plan['scenes'])} scenes with the {plan['character']} lead.",flush=True)
     storyboard(plan,args.out);character_sheet(args.out)
+    if args.plan_only:
+        print(f'Plan and storyboard ready: {args.out}',flush=True)
+        return
     timings=synthesize(plan,args.out,args.voice,duration_scale=.25 if args.preview else 1,fps=args.fps)
     # Quantize every scene to frame boundaries to prevent cumulative caption drift.
     cursor=0

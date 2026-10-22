@@ -77,8 +77,20 @@ jobs:
         run: python -m pip install -r requirements-ai.txt
       - name: Test renderer and input handling
         run: python -m unittest discover -s tests -v
-      - name: Write shots, animate and render
-        run: python -m storyfilm.render --fps 12 --height 1080 --out output
+      - name: Write the directed story and storyboard
+        run: python -m storyfilm.render --plan-only --fps 12 --height 1080 --out output
+      - name: Upload the early story preview
+        uses: actions/upload-artifact@v4
+        with:
+          name: story-plan-${{ github.run_number }}
+          path: |
+            output/story.json
+            output/storyboard.jpg
+            output/characters.png
+          retention-days: 7
+          if-no-files-found: error
+      - name: Animate and render the verified plan
+        run: python -m storyfilm.render --plan output/story.json --fps 12 --height 1080 --out output
       - name: Preserve verified story progress for a retry
         if: "${{ always() && hashFiles('output/ai-response.checkpoint.json') != '' }}"
         uses: actions/cache/save@v4
