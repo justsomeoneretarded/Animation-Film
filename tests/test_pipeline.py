@@ -254,7 +254,7 @@ class RealTimeDirectionTests(unittest.TestCase):
         a=stage(s,'male','Different title',1.5,5,0,10)
         b=stage(s,'male','Different title',1.5,12,0,10)
         self.assertIsNone(ImageChops.difference(a,b).getbbox())
-        self.assertAlmostEqual(walk_position(2)-walk_position(1),76)
+        self.assertAlmostEqual(walk_position(2)-walk_position(1),150)
         text='A fairly long message that should never take seconds per letter.'
         self.assertGreaterEqual(text_count(text,1,'send'),7)
         self.assertEqual(text_count('Hello.',1,'send'),6)

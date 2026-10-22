@@ -1,7 +1,13 @@
 """Real-second choreography shared by pictures, sound and frame directions."""
 import math
 
-ACTION_SECONDS={'idle':1.2,'sit':1.1,'stand':1.25,'sleep':1.5,'phone':.75,'receive':.65,
+WALK_SPEED=150.0
+WALK_PHASE=5.5
+WALK_SECONDS=3.4
+
+def walk_weight(t):return max(0,min(1,(WALK_SECONDS-t)/.4))
+
+ACTION_SECONDS={'walk':WALK_SECONDS,'idle':1.2,'sit':1.1,'stand':1.25,'sleep':1.5,'phone':.75,'receive':.65,
  'send':1.0,'write':1.5,'exercise':3.2,'reach':1.0,'knock':1.25,'fall':.8,'getup':2.1,
  'lookaway':.7,'clench':.8,'wipe_tear':1.4,'dismiss':.7}
 PHONE_BOUNDS=(390,65,570,455) # logical units: modern portrait handset, 0.462 aspect ratio
@@ -31,7 +37,8 @@ def action_progress(action,t):return max(0,min(1,t/max(.1,ACTION_SECONDS.get(act
 
 def walk_position(t):
     # Same cadence and displacement for a three-second or ten-second shot.
-    return 300+min(t,4.2)*76
+    cruise=min(max(0,t),3.0);brake=max(0,min(.4,t-3.0))
+    return 220+WALK_SPEED*(cruise+brake-brake*brake/.8)
 
 def natural_duration(scene):
     action=scene['action'];text=scene.get('prop_text','')
@@ -55,5 +62,5 @@ def frame_state(scene,t,absolute=0,duration=6):
             'clock_seconds':round(scene.get('clock_minutes',22*60)*60+ambient,3),
             'window_rain':scene.get('weather')=='rain' and scene['location'] in {'bedroom','desk'},
             'light':scene.get('time','night')},
-        'audio':{'rain':scene.get('weather')=='rain','clock_tick':scene['location'] in {'bedroom','desk','gym'} and ambient%1<1/12,'foot_contact':action=='walk' and (t%(math.pi/3.6))<1/12,'send_tap':action=='send' and 0<=t-send_time(text,scene.get('pretyped',False))<1/12},
+        'audio':{'rain':scene.get('weather')=='rain','clock_tick':scene['location'] in {'bedroom','desk','gym'} and ambient%1<1/12,'foot_contact':action=='walk' and t<WALK_SECONDS and (t%(math.pi/WALK_PHASE))<1/12,'send_tap':action=='send' and 0<=t-send_time(text,scene.get('pretyped',False))<1/12},
         'camera':scene.get('shot','wide'),'time':round(absolute,3)}

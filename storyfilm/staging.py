@@ -2,7 +2,7 @@
 import math
 from functools import lru_cache
 from PIL import Image, ImageDraw, ImageFilter
-from .motion import action_progress, walk_position, text_count, send_time, text_finished
+from .motion import action_progress, walk_position, text_count, send_time, text_finished, WALK_SPEED, WALK_PHASE, WALK_SECONDS, walk_weight
 from .art import Draw, capsule, jointed, smooth, glow, gradient, wrapped, font, W, H, S
 
 SKIN='#e9dfcb'; SHADE='#b8aa96'; EDGE='#171c24'
@@ -30,8 +30,8 @@ def actor(im,x,floor,t,gender='male',action='idle',emotion='neutral',scale=1.,sh
     if action=='exercise':
         # Prepare, attempt one rep, hold the effort, then lower under control.
         lift=envelope(p,.18,.46)*(1-envelope(p,.7,.94));crouch=12*(1-lift)
-    walk=action=='walk';phase=t*3.6
-    bob=-abs(math.sin(phase))*3 if walk else 0
+    walk=action=='walk';phase=t*WALK_PHASE;stride=walk_weight(t) if walk else 0
+    bob=-abs(math.sin(phase))*3*stride if walk else 0
     # Emotional posture changes once per shot, with a restrained breath between actions.
     mood=envelope(t,.15,.8)
     start_low=emotion_from in {'sad','tired','worried','hurt','ashamed'} if emotion_from else emotion in {'sad','tired','worried','hurt','ashamed'}
@@ -50,10 +50,10 @@ def actor(im,x,floor,t,gender='male',action='idle',emotion='neutral',scale=1.,sh
         if sitting:
             knee=(ax+34,423);foot=(ax+35,490)
         elif walk:
-            ph=(phase+j*math.pi)%(2*math.pi);span=walk_speed*math.pi/7.2
+            ph=(phase+j*math.pi)%(2*math.pi);span=walk_speed*math.pi/(2*WALK_PHASE)*stride
             if ph<math.pi:dx=span*(1-2*ph/math.pi);dy=0
             else:
-                z=(ph-math.pi)/math.pi;dx=smooth(-span,span,z);dy=math.sin(z*math.pi)*26
+                z=(ph-math.pi)/math.pi;dx=smooth(-span,span,z);dy=math.sin(z*math.pi)*26*stride
             foot=(ax+dx,fy-dy);knee=(ax+dx*.48,421-dy*.7)
         elif action in {'fall','getup'}:
             amt=crouch/84;knee=(ax+side*45*amt,423+40*amt);foot=(ax+side*35*amt,490)
@@ -72,7 +72,7 @@ def actor(im,x,floor,t,gender='male',action='idle',emotion='neutral',scale=1.,sh
     d.path([('M',sx-29,sy-9),('C',sx-67,sy-3,sx-60,sy+44,px-63,py-7),('C',px-65,py+31,px+64,py+31,px+63,py-7),('C',sx+60,sy+44,sx+67,sy-3,sx+29,sy-9),('C',sx+10,sy+3,sx-10,sy+3,sx-29,sy-9)],cloth,EDGE,3)
     d.path([('M',sx+42,sy+16),('C',sx+50,sy+59,px+55,py,px+42,py+13),('C',px+10,py+26,px-25,py+17,px-39,py+15)],None,'#646b72',3)
     # Arms use event phases, never an unrelated idle waving cycle.
-    swing=math.sin(phase)*19 if walk else 0
+    swing=math.sin(phase)*19*stride if walk else 0
     left=[(sx-45,sy+8),(sx-59,sy+65),(sx-55+swing,sy+113)]
     right=[(sx+45,sy+8),(sx+59,sy+65),(sx+55-swing,sy+113)]
     if sitting:
@@ -267,7 +267,7 @@ def stage(scene,gender,title,t,duration,index,total,subtitle=''):
     shadow_actor(im,x+151,floor,t,p,sh,scene.get('shadow_size',1.))
     d=Draw(im);d.ellipse((x-67,floor-4,x+70,floor+12),'#19212a')
     seated=act in {'sit','phone','send','receive','write'} and loc in {'park','bedroom','desk'}
-    pose=actor(im,x,floor,t,gender,act,scene['emotion'],scale,progress=action_progress(act,t),walk_speed=76/scale,emotion_from=scene.get('emotion_from'),seated=seated,gaze_target=scene.get('gaze'),gesture=scene.get('gesture','none'),intensity=scene.get('intensity',.7),send_at=send_time(scene.get('prop_text',''),scene.get('pretyped',False)),write_until=text_finished(scene.get('prop_text',''),'write'))
+    pose=actor(im,x,floor,t,gender,act,scene['emotion'],scale,progress=action_progress(act,t),walk_speed=WALK_SPEED/scale,emotion_from=scene.get('emotion_from'),seated=seated,gaze_target=scene.get('gaze'),gesture=scene.get('gesture','none'),intensity=scene.get('intensity',.7),send_at=send_time(scene.get('prop_text',''),scene.get('pretyped',False)),write_until=text_finished(scene.get('prop_text',''),'write'))
     d=Draw(im)
     if loc=='desk':
         d.box((342,381,804,400),'#a38b6d',EDGE,3,r=5)
