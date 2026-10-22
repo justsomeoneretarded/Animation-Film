@@ -49,10 +49,10 @@ jobs:
         run: |
           python - <<'PYCODE'
           import hashlib, json, os
-          data = ['visual-v5.1', os.environ['FILM_TITLE'], os.environ['FILM_BRIEF'], 'Qwen3-4B-Instruct-2507']
+          data = ['visual-v5.2', os.environ['FILM_TITLE'], os.environ['FILM_BRIEF'], 'Qwen3-4B-Instruct-2507']
           digest = hashlib.sha256(json.dumps(data).encode()).hexdigest()
           with open(os.environ['GITHUB_OUTPUT'], 'a') as out:
-              out.write('key=story-v51-' + digest + '\n')
+              out.write('key=story-v52-' + digest + '\n')
           PYCODE
       - name: Restore story writing progress
         uses: actions/cache/restore@v4

@@ -162,22 +162,26 @@ class GeneralWriterContractTests(unittest.TestCase):
             def __init__(self):self.calls=[]
             def create_chat_completion(self,**request):
                 self.calls.append(request);required=request['response_format']['schema']['required']
-                if 'relationship' in required:data={k:'A specific cause and consequence.' for k in required}
+                if 'sequence_1' in required:data={k:'A specific cause and consequence.' for k in required}
+                elif 'slot_1' in required:
+                    data={}
+                    for key,prop in request['response_format']['schema']['properties'].items():
+                        choices=prop['enum'];order=['read_message','draft_message','write_note','send_message','walk','rise_from_seat','delete_draft','clench']
+                        data[key]=min(choices,key=lambda k:next((i for i,v in enumerate(order) if k.startswith(v+'__')),99))
                 elif 'beat_1' in required:
                     data={}
                     for i in range(COUNT):
-                        action,location,emotion,prop=[('receive','bedroom','hurt',f'You stopped answering my invitations {i}.'),('phone','bedroom','angry',f'You forgot about me again {i}.'),('dismiss','bedroom','ashamed',f'That accusation was unfair {i}.'),('write','desk','ashamed',f'I ignored your invitations {i}.'),('stand','desk','determined',''),('walk','street','worried',''),('clench','park','hurt',''),('send','park','relieved',f'I am sorry I did not answer you {i}.')][i%8]
-                        if i==COUNT-1:action,location,prop='write','desk','What I need to say tomorrow.'
-                        kind=next(k for k,v in EVENT_CODES.items() if v==(action,location))
-                        data[f'beat_{i+1}']=dict(event=kind,emotion=emotion,prop_text=prop or '---',change='New specific information changes the next decision '+str(i))
-                    if len(self.calls)==2:data.pop('beat_32')
+                        kind=request['response_format']['schema']['properties'][f'beat_{i+1}']['properties']['event']['enum'][0]
+                        action,location=EVENT_CODES[kind]
+                        data[f'beat_{i+1}']=dict(event=kind,emotion=['hurt','angry','ashamed','relieved'][i//8],prop_text=f'Words {i}.' if action in {'phone','send','receive','write','dismiss'} else '---',change='New specific information changes the next decision '+str(i))
+                    if len(self.calls)==10:data.pop('beat_32')
                 else:data=dict(captions=[dict(scene=i,text=t) for i,t in [(1,'The invitations had stopped.'),(10,'An easy answer would have been another lie.'),(24,'That silence had hurt someone else.'),(47,'Tomorrow would require an honest answer.')]],shadows=[dict(scene=2,text='Leave it unanswered.'),dict(scene=20,text='They will misunderstand.')])
                 return {'choices':[{'message':{'content':json.dumps(data)}}]}
         model=Model();brief='She walks outside and sends an honest answer. End at the desk, writing again.'
         with tempfile.TemporaryDirectory() as directory:
             diagnostic=Path(directory)/'writer.txt';p=write(model,'A completely different title',brief,'female',diagnostic)
             self.assertEqual(write(model,'A completely different title',brief,'female',diagnostic),p)
-        self.assertEqual(len(model.calls),4);self.assertEqual(len(p['scenes']),47)
+        self.assertEqual(len(model.calls),12);self.assertEqual(len(p['scenes']),47)
         self.assertEqual(p['pacing'],'natural');self.assertAlmostEqual(sum(x['duration'] for x in p['scenes']),p['target_seconds'])
         self.assertEqual(p['scenes'][-1]['action'],'write');self.assertEqual(p['scenes'][-1]['location'],'desk')
         self.assertEqual(sum(bool(x['caption']) for x in p['scenes']),4)
